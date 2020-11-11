@@ -1,3 +1,5 @@
+import logging
+
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap
@@ -7,6 +9,8 @@ from . import helpers
 from .designerforms import Ui_MainDialog
 from .game import Game
 from .resultdialog import ResultDialog
+
+FORMAT = '%(levelname)s:%(asctime)-15s %(message)s'
 
 _image_paths = [
     "resources/images/gallows-0.png",
@@ -25,12 +29,24 @@ _image_logo_path = "resources/images/Logo_1.png"
 _image_win_path = "resources/images/win.png"
 _image_lose_path = "resources/images/lose.jpg"
 
+_levels = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL
+}
+
 
 class MainWindow(QDialog, Ui_MainDialog):
     def __init__(self, args: dict):
         super().__init__()
-        self.setFixedSize(1000, 785)
+        self.resize(1000, 785)
         self.setupUi(self)
+
+        if args["debug_level"]:
+            logging.basicConfig(format=FORMAT, level=_levels[args["debug_level"]])
+        self._logger = logging.getLogger(__name__)
 
         self._args = args
 
@@ -56,8 +72,10 @@ class MainWindow(QDialog, Ui_MainDialog):
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         key = event.key()
+        self._logger.debug(f"key pressed: {key}")
 
         if self._ctrl_n.matches(event):
+            self._logger.info("requesting new game")
             self._new_game()
         elif self._ctrl_r.matches(event):
             print(f"word: {self._game.get_word()}")

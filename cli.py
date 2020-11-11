@@ -12,6 +12,13 @@ def parse_args():
         help="Don't confirm program exit.",
         required=False
     )
+
+    parser.add_argument(
+        "--debug_level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Level of debugging message to display.",
+        required=False
+    )
     return vars(parser.parse_args())
 
 
