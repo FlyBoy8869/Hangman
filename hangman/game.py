@@ -26,10 +26,11 @@ class Game(QObject):
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._word_to_guess = None
         self._game_over = True
-        self._progress = 0
+        self._progress: int = 0
         self._mask = []
 
-    def get_word(self) -> str:
+    @property
+    def word(self) -> str:
         return self._word_to_guess
 
     def new_game(self) -> None:

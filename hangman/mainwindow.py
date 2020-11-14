@@ -68,7 +68,7 @@ class MainWindow(QDialog, Ui_MainDialog):
             self._logger.info("requesting new game", extra=self.extra)
             self._new_game()
         elif self._ctrl_r.matches(event):
-            self._logger.debug(f"word: {self._game.get_word()}")
+            self._logger.debug(f"word: {self._game.word}", extra=self.extra)
         elif _letter_A <= key <= _letter_Z:
             self._logger.debug(f"key pressed: '{chr(key)}'", extra=self.extra)
             self._game.process_guess(chr(event.key()))
