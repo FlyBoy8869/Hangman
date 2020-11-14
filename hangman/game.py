@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -11,10 +12,14 @@ class Game(QObject):
     gameOver = pyqtSignal(tuple)
     gameWon = pyqtSignal(str)
 
+    extra = {"classname": "Game"}
+
     # **********  PUBLIC INTERFACE  ************************************************************************
 
     def __init__(self):
         super().__init__()
+
+        self._logger = logging.getLogger("hangman")
 
         self._word_selector = WordSelector(Path("hangman/words.txt"))
         self._guessed_letters = []
@@ -28,6 +33,7 @@ class Game(QObject):
         return self._word_to_guess
 
     def new_game(self) -> None:
+        self._logger.info("Initializing new game state", extra=self.extra)
         self._word_to_guess = self._word_selector.select()
         self._mask = ["-"] * len(self._word_to_guess)
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -38,6 +44,7 @@ class Game(QObject):
         self._emit_progress_update()
 
     def process_guess(self, letter) -> None:
+        self._logger.info(f"processing guess: '{letter}'", extra=self.extra)
         if self._game_over or letter in self._guessed_letters:
             return
 

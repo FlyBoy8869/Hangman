@@ -10,8 +10,6 @@ from .designerforms import Ui_MainDialog
 from .game import Game
 from .resultdialog import ResultDialog
 
-FORMAT = '%(levelname)s:%(asctime)-15s %(message)s'
-
 _image_paths = [
     "resources/images/gallows-0.png",
     "resources/images/gallows-1.png",
@@ -29,24 +27,16 @@ _image_logo_path = "resources/images/Logo_1.png"
 _image_win_path = "resources/images/win.png"
 _image_lose_path = "resources/images/lose.jpg"
 
-_levels = {
-    "DEBUG": logging.DEBUG,
-    "INFO": logging.INFO,
-    "WARNING": logging.WARNING,
-    "ERROR": logging.ERROR,
-    "CRITICAL": logging.CRITICAL
-}
-
 
 class MainWindow(QDialog, Ui_MainDialog):
+    extra = {"classname": "MainWindow"}
+
     def __init__(self, args: dict):
         super().__init__()
         self.resize(1000, 785)
         self.setupUi(self)
 
-        if args["debug_level"]:
-            logging.basicConfig(format=FORMAT, level=_levels[args["debug_level"]])
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger("hangman")
 
         self._args = args
 
@@ -72,14 +62,15 @@ class MainWindow(QDialog, Ui_MainDialog):
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         key = event.key()
-        self._logger.debug(f"key pressed: {key}")
 
         if self._ctrl_n.matches(event):
-            self._logger.info("requesting new game")
+            self._logger.debug("received CTRL-N", extra=self.extra)
+            self._logger.info("requesting new game", extra=self.extra)
             self._new_game()
         elif self._ctrl_r.matches(event):
-            print(f"word: {self._game.get_word()}")
+            self._logger.debug(f"word: {self._game.get_word()}")
         elif _letter_A <= key <= _letter_Z:
+            self._logger.debug(f"key pressed: '{chr(key)}'", extra=self.extra)
             self._game.process_guess(chr(event.key()))
         else:
             super().keyPressEvent(event)
