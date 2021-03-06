@@ -1,9 +1,25 @@
 import logging
+from enum import IntEnum
 from pathlib import Path
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from hangman.wordgenerator import WordSelector
+from hangman.wordlist import WordList
+
+
+class GameState(IntEnum):
+    GALLOWS = 0
+    HEAD = 1
+    TORSO = 2
+    LEFT_ARM = 3
+    RIGHT_ARM = 4
+    RIGHT_LEG = 5
+    LEFT_LEG = 6
+
+
+def _advance_game_state():
+    for state in GameState:
+        yield state
 
 
 class Game(QObject):
@@ -21,12 +37,13 @@ class Game(QObject):
 
         self._logger = logging.getLogger("hangman")
 
-        self._word_selector = WordSelector(Path("hangman/words.txt"))
+        self._word_list = WordList.create_from_file(Path("hangman/words.txt"))
         self._guessed_letters = []
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._word_to_guess = None
         self._game_over = True
-        self._progress: int = 0
+        self._game_state = None
+        self._current_state = None
         self._mask = []
 
     @property
@@ -35,13 +52,13 @@ class Game(QObject):
 
     def new_game(self) -> None:
         self._logger.info("Initializing new game state", extra=self.extra)
-        self._word_to_guess = self._word_selector.select()
+        self._word_to_guess = self._word_list.pick_a_word()
         self._mask = ["-"] * len(self._word_to_guess)
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._guessed_letters = []
         self._game_over = False
-        self._progress = 0
-
+        self._game_state = _advance_game_state()
+        self._current_state = next(self._game_state)
         self._emit_progress_update()
 
     def process_guess(self, letter) -> None:
@@ -58,6 +75,7 @@ class Game(QObject):
 
             if self._did_win():
                 self._game_over = True
+                # noinspection PyUnresolvedReferences
                 self.gameOver.emit(("WON", self._word_to_guess))
         else:
             self._do_wrong_guess()
@@ -68,20 +86,27 @@ class Game(QObject):
         return self._get_mask() == self._word_to_guess
 
     def _is_game_lost(self):
-        self._progress += 1
-        return self._progress == 6
+        self._current_state: GameState = next(self._game_state)
+        return self._current_state.value == 6
 
     def _do_wrong_guess(self):
         if self._is_game_lost():
             self._emit_progress_update()
+            # noinspection PyUnresolvedReferences
             self.gameOver.emit(("LOST", self._word_to_guess))
             self._game_over = True
         else:
             self._emit_progress_update()
 
     def _emit_progress_update(self):
+        # noinspection PyUnresolvedReferences
         self.updateProgress.emit(
-            (self._progress, self._get_available_letters(), self._get_guessed_letters(), self._get_mask())
+            (
+                self._current_state,
+                self._get_available_letters(),
+                self._get_guessed_letters(),
+                self._get_mask()
+            )
         )
 
     def _get_available_letters(self):
@@ -95,6 +120,7 @@ class Game(QObject):
 
     def _record_letter(self, letter: str) -> None:
         self._guessed_letters.append(letter)
+        # noinspection PyUnresolvedReferences
         self.guessedLettersUpdated.emit(self._get_guessed_letters())
 
     def _remove_letter_choice(self, letter) -> None:

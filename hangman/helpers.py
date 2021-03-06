@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QApplication
 
 
 def pop_exit_dialog(parent) -> bool:
@@ -12,12 +12,30 @@ def pop_exit_dialog(parent) -> bool:
     return False
 
 
-class KeySequence:
-    def __init__(self, key: Qt.Key, modifiers: Qt.KeyboardModifiers):
-        assert Qt.Key_A <= key <= Qt.Key_Z, "Key must be in range 'A' - 'Z'"
+class Key:
+    def __init__(self, key: int):
         self._key = key
-        self._modifiers = modifiers
 
-    def matches(self, event: QKeyEvent):
-        assert isinstance(event, QKeyEvent), "event must be an instance of QKeyEvent"
-        return self._key == event.key() and event.modifiers() == self._modifiers
+    def __eq__(self, other):
+        return self._key == other
+
+    def __lt__(self, other):
+        return self._key < other
+
+    def __gt__(self, other):
+        return self._key > other
+
+
+class KeySequence:
+    modifier: Qt.KeyboardModifiers = None
+
+    def __init__(self, key: Key):
+        self._key = key
+
+    def __eq__(self, other: QKeyEvent):
+        assert isinstance(other, QKeyEvent), f"invalid type {type(other)}, must be type <'QKeyEvent'>"
+        return self._key == other.key() and QApplication.keyboardModifiers() == self.modifier
+
+
+class CtrlKeySequence(KeySequence):
+    modifier = Qt.ControlModifier

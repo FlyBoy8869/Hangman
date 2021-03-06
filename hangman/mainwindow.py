@@ -4,28 +4,30 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QDialog
+from icecream import ic
 
 from . import helpers
 from .designerforms import Ui_MainDialog
-from .game import Game
+from .game import Game, GameState
 from .resultdialog import ResultDialog
 
-_image_paths = [
-    "resources/images/gallows-0.png",
-    "resources/images/gallows-1.png",
-    "resources/images/gallows-2.png",
-    "resources/images/gallows-3.png",
-    "resources/images/gallows-4.png",
-    "resources/images/gallows-5.png",
-    "resources/images/gallows-6.png"
-]
+ic.configureOutput(includeContext=True)
 
-_letter_A = 65
-_letter_Z = 90
+_image_paths = {
+    GameState.GALLOWS: "resources/images/gallows-0.png",
+    GameState.HEAD: "resources/images/gallows-1.png",
+    GameState.TORSO: "resources/images/gallows-2.png",
+    GameState.LEFT_ARM: "resources/images/gallows-3.png",
+    GameState.RIGHT_ARM: "resources/images/gallows-4.png",
+    GameState.RIGHT_LEG: "resources/images/gallows-5.png",
+    GameState.LEFT_LEG: "resources/images/gallows-6.png"
+}
 
 _image_logo_path = "resources/images/Logo_1.png"
 _image_win_path = "resources/images/win.png"
 _image_lose_path = "resources/images/lose.jpg"
+
+_alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
 
 class MainWindow(QDialog, Ui_MainDialog):
@@ -40,8 +42,9 @@ class MainWindow(QDialog, Ui_MainDialog):
 
         self._args = args
 
-        self._ctrl_n = helpers.KeySequence(Qt.Key_N, Qt.ControlModifier)
-        self._ctrl_r = helpers.KeySequence(Qt.Key_R, Qt.ControlModifier)
+        self._ctrl_f = helpers.CtrlKeySequence(Qt.Key_F)
+        self._ctrl_n = helpers.CtrlKeySequence(Qt.Key_N)
+        self._ctrl_r = helpers.CtrlKeySequence(Qt.Key_R)
 
         self._game = Game()
         self._game.guessedLettersUpdated.connect(
@@ -54,6 +57,9 @@ class MainWindow(QDialog, Ui_MainDialog):
 
         self.label_status.setPixmap(QPixmap(_image_logo_path))
 
+        self.pb_new_game.clicked.connect(self._new_game)
+        self.pb_show_world.clicked.connect(lambda: print(f"word = {self._game.word}"))
+
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if self._args["noconfirmexit"] or helpers.pop_exit_dialog(self):
             event.accept()
@@ -61,22 +67,22 @@ class MainWindow(QDialog, Ui_MainDialog):
             event.ignore()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
-        key = event.key()
-
-        if self._ctrl_n.matches(event):
+        if event == self._ctrl_n:
             self._logger.debug("received CTRL-N", extra=self.extra)
             self._logger.info("requesting new game", extra=self.extra)
             self._new_game()
-        elif self._ctrl_r.matches(event):
+        elif event == self._ctrl_r:
             self._logger.debug(f"word: {self._game.word}", extra=self.extra)
-        elif _letter_A <= key <= _letter_Z:
-            self._logger.debug(f"key pressed: '{chr(key)}'", extra=self.extra)
-            self._game.process_guess(chr(event.key()))
+        elif event == self._ctrl_f:
+            ic("select filters to apply to the word list")
+        elif event.text() in _alphabet:
+            key = chr(event.key())
+            self._logger.debug(f"key pressed: '{key}'", extra=self.extra)
+            self._game.process_guess(key)
         else:
             super().keyPressEvent(event)
 
     def _new_game(self) -> None:
-        self.label_status.setPixmap(QPixmap(_image_paths[0]))
         self._game.new_game()
 
     def _game_over(self, status: tuple[str, str]) -> None:
@@ -88,9 +94,10 @@ class MainWindow(QDialog, Ui_MainDialog):
     def _show_result_dialog(self, image: QPixmap) -> None:
         self._result_dialog.run(image)
 
-    def _update_view(self, state: tuple[int, str, str, str]) -> None:
-        progress, available_letters, guessed_letters, mask = state
-        self.label_status.setPixmap(QPixmap(_image_paths[progress]))
+    def _update_view(self, state: tuple[GameState, str, str, str]) -> None:
+        image, available_letters, guessed_letters, mask = state
+        self.label_status.setPixmap(QPixmap(_image_paths[image]))
+        self._logger.debug(f"setting image to {image.name}", extra=self.extra)
         self.label_available_letters.setText(available_letters)
         self.label_guessed_letters.setText(guessed_letters)
         self.label_word.setText(mask)
