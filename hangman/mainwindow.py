@@ -27,7 +27,7 @@ _image_logo_path = "resources/images/Logo_1.png"
 _image_win_path = "resources/images/win.png"
 _image_lose_path = "resources/images/lose.jpg"
 
-_alphabet = list("abcdefghijklmnopqrstuvwxyz")
+_alphabet = frozenset("abcdefghijklmnopqrstuvwxyz")
 
 
 class MainWindow(QDialog, Ui_MainDialog):
