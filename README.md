@@ -1,7 +1,7 @@
 #Hangman
 
 
-```python
+```
 usage: hangman.py [-h] [--noconfirmexit]
 
 Hangman: Guess the letters of a word until successfully guessed or you are hung :P
