@@ -2,11 +2,11 @@
 
 
 ```
-usage: hangman.py [-h] [--noconfirmexit]
+usage: hangman.py [-h] [--noconfirmexit] [--length LENGTH] [--body {plain,chicken}]
 
-Hangman: Guess the letters of a word until successfully guessed or you are hung :P
-
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --noconfirmexit       Don't confirm program exit.
+  --noconfirmexit       don't confirm program exit
+  --length LENGTH       select only words of the specified length
+  --body {plain,chicken}
 ```
