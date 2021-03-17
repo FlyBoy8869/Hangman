@@ -8,10 +8,10 @@ from hangman.mainwindow import MainWindow
 import hangman.loggingsetup as loggingsetup
 
 
-def main(args: dict):
+def main():
     patch.patch_exception_hook()
-    loggingsetup.setup_logging(args)
+    loggingsetup.setup_logging()
     app = QApplication(sys.argv)
-    window = MainWindow(args)
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
