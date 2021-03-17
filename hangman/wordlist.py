@@ -1,8 +1,6 @@
 import random
 from pathlib import Path
 
-from icecream import ic
-
 
 class Filter:
     """Return True if filter succeeds."""
@@ -47,9 +45,9 @@ class WordList:
 
     def __init__(self, word_list: list[str], selection_filters: list[Filter] = None):
         self._word_list = word_list
-        self._filters: list[Filter] = [NoApostropheFilter(), NoNumbersFilter(), ]
+        self._filters: list[Filter, ...] = [NoApostropheFilter(), NoNumbersFilter(), ]
         if selection_filters:
-            self._filters = self._filters + selection_filters
+            self._filters += selection_filters
 
     def add_filter(self, _filter: Filter):
         assert isinstance(_filter, Filter), f"invalid type {type(_filter)}"
