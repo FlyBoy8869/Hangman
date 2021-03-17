@@ -1,5 +1,7 @@
 import logging
 
+from hangman.config import config
+
 FORMAT = '%(levelname)s:%(asctime)-15s %(module)s.%(classname)s.%(funcName)s:line no. %(lineno)d, %(message)s'
 
 _levels = {
@@ -11,6 +13,6 @@ _levels = {
 }
 
 
-def setup_logging(args: dict):
-    if args["debug_level"]:
-        logging.basicConfig(format=FORMAT, level=_levels[args["debug_level"]])
+def setup_logging():
+    if config.debug_level:
+        logging.basicConfig(format=FORMAT, level=_levels[config.debug_level])
