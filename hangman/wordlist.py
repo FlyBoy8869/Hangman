@@ -1,4 +1,5 @@
 import random
+import time
 from pathlib import Path
 
 from PyQt5.QtCore import QRunnable, pyqtSignal, QThreadPool, QObject
@@ -86,9 +87,9 @@ class _WordPicker(QRunnable):
     def run(self):
         while word := random.choice(self._word_list):
             if all(self._apply_filters_to(word)):
+                time.sleep(1.0)
                 self.signals.publish_word.emit(word)
                 return
 
     def _apply_filters_to(self, word: str):
         return [_filter.filter(word) for _filter in self._filters]
-
