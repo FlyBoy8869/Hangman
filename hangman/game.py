@@ -54,7 +54,7 @@ class Game(QObject):
 
         self._logger = logging.getLogger("hangman")
 
-        self._word_list = WordList.create_from_file(Path("hangman/words.txt"))
+        self._word_list = WordList.create_from_file(Path("resources/words.txt"))
         self._word_list.publish_word.connect(self._received_new_word)
         if config.length and config.length > 0:
             word_length = LengthFilter(config.length)
