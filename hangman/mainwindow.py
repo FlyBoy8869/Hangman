@@ -71,6 +71,9 @@ class MainWindow(QDialog, Ui_MainDialog):
             super().keyPressEvent(event)
 
     def _new_game(self) -> None:
+        self.label_word.clear()
+        self.label_available_letters.clear()
+        self.label_guessed_letters.clear()
         self._show_spinner()
         self._game.new_game()
 
@@ -82,6 +85,7 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._result_dialog.run(image)
 
     def _show_spinner(self):
-        movie = QMovie("resources/images/tits.gif")
+        movie = QMovie("resources/images/spinners/spinner.gif")
+        movie.setSpeed(500)
         self.label_status.setMovie(movie)
         movie.start()
