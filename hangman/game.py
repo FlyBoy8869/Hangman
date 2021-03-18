@@ -43,6 +43,7 @@ class Game(QObject):
     maskChanged = pyqtSignal(str)
     gameOver = pyqtSignal(str)
     gameWon = pyqtSignal(str)
+    pickingWord = pyqtSignal()
 
     extra = {"classname": "Game"}
 
@@ -54,6 +55,7 @@ class Game(QObject):
         self._logger = logging.getLogger("hangman")
 
         self._word_list = WordList.create_from_file(Path("hangman/words.txt"))
+        self._word_list.publish_word.connect(self._received_new_word)
         if config.length and config.length > 0:
             word_length = LengthFilter(config.length)
             self._word_list.add_filter(word_length)
@@ -74,8 +76,11 @@ class Game(QObject):
         return self._word_to_guess
 
     def new_game(self) -> None:
+        self._word_list.pick_a_word()
+
+    def _new_game(self) -> None:
         self._logger.info("Initializing new game state", extra=self.extra)
-        self._word_to_guess = self._word_list.pick_a_word()
+        # self._word_to_guess = self._word_list.pick_a_word()
         self._mask = ["-"] * len(self._word_to_guess)
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._guessed_letters = []
@@ -83,10 +88,15 @@ class Game(QObject):
         self._game_state = _advance_gallows_image()
         self._current_image = next(self._game_state)
 
+        self._emit_available_letters()
         # noinspection PyUnresolvedReferences
-        self.maskChanged.emit(self.mask)
+        self._emit_mask_changed()
         # noinspection PyUnresolvedReferences
         self._emit_image_changed(GallowsImage.THE_DREADED_GALLOWS)
+
+    def _received_new_word(self, word: str):
+        self._word_to_guess = word
+        self._new_game()
 
     def process_guess(self, letter) -> None:
         self._logger.info(f"processing guess: '{letter}'", extra=self.extra)
@@ -125,9 +135,17 @@ class Game(QObject):
         # noinspection PyUnresolvedReferences
         self._emit_image_changed(self._current_image)
 
+    def _emit_available_letters(self):
+        # noinspection PyUnresolvedReferences
+        self.availableLetters.emit(self._get_available_letters())
+
     def _emit_image_changed(self, index: GallowsImage):
         # noinspection PyUnresolvedReferences
         self.imageChanged.emit(QPixmap(_image_paths[index]))
+
+    def _emit_mask_changed(self):
+        # noinspection PyUnresolvedReferences
+        self.maskChanged.emit(self.mask)
 
     def _get_available_letters(self):
         return self._join(self._available_letters, " ")
@@ -143,7 +161,7 @@ class Game(QObject):
     def _remove_letter_choice(self, letter) -> None:
         self._available_letters = self._available_letters.replace(letter, "")
         # noinspection PyUnresolvedReferences
-        self.availableLetters.emit(self._get_available_letters())
+        self._emit_available_letters()
 
     def _update_mask(self, letter: str) -> None:
         indexes = []
@@ -155,7 +173,7 @@ class Game(QObject):
             self._mask[index] = letter
 
         # noinspection PyUnresolvedReferences
-        self.maskChanged.emit(self.mask)
+        self._emit_mask_changed()
 
     def _word_contains_letter(self, letter: str) -> bool:
         return letter in self._word_to_guess

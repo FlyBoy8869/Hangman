@@ -2,7 +2,7 @@ import logging
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QMovie
 from PyQt5.QtWidgets import QDialog
 from icecream import ic
 
@@ -58,21 +58,20 @@ class MainWindow(QDialog, Ui_MainDialog):
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event == self._ctrl_n:
-            self._logger.debug("received CTRL-N", extra=self.extra)
-            self._logger.info("requesting new game", extra=self.extra)
             self._new_game()
         elif event == self._ctrl_r:
-            self._logger.debug(f"word: {self._game.word}", extra=self.extra)
+            ic(self._game.word)
         elif event == self._ctrl_f:
             ic("select filters to apply to the word list")
         elif event.text() in _alphabet:
             key = chr(event.key())
-            self._logger.debug(f"key pressed: '{key}'", extra=self.extra)
+            ic(key)
             self._game.process_guess(key)
         else:
             super().keyPressEvent(event)
 
     def _new_game(self) -> None:
+        self._show_spinner()
         self._game.new_game()
 
     def _game_over(self, result: str) -> None:
@@ -81,3 +80,8 @@ class MainWindow(QDialog, Ui_MainDialog):
 
     def _show_result_dialog(self, image: QPixmap) -> None:
         self._result_dialog.run(image)
+
+    def _show_spinner(self):
+        movie = QMovie("resources/images/tits.gif")
+        self.label_status.setMovie(movie)
+        movie.start()

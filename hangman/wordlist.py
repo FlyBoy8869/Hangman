@@ -1,6 +1,9 @@
 import random
 from pathlib import Path
 
+from PyQt5.QtCore import QRunnable, pyqtSignal, QThreadPool, QObject
+from PyQt5.QtWidgets import QApplication
+
 
 class Filter:
     """Return True if filter succeeds."""
@@ -36,7 +39,9 @@ class LengthFilter(Filter):
         return len(word) == self._length
 
 
-class WordList:
+class WordList(QObject):
+    publish_word = pyqtSignal(str)
+
     @classmethod
     def create_from_file(cls, file: Path):
         with file.open(mode="r", encoding="utf-8") as file:
@@ -44,6 +49,7 @@ class WordList:
         return cls(word_list)
 
     def __init__(self, word_list: list[str], selection_filters: list[Filter] = None):
+        super().__init__()
         self._word_list = word_list
         self._filters: list[Filter, ...] = [NoApostropheFilter(), NoNumbersFilter(), ]
         if selection_filters:
@@ -53,11 +59,36 @@ class WordList:
         assert isinstance(_filter, Filter), f"invalid type {type(_filter)}"
         self._filters.append(_filter)
 
-    def pick_a_word(self) -> str:
+    def pick_a_word(self):
+        # while word := random.choice(self._word_list):
+        #     ic("picking a word")
+        #     if all(self._apply_filters_to(word)):
+        #         return word.upper()
+        word_picker = _WordPicker(self._word_list, self._filters)
+        word_picker.signals.publish_word.connect(lambda word: self.publish_word.emit(word.upper()))
+        QThreadPool.globalInstance().start(word_picker)
+
+    # def _apply_filters_to(self, word: str):
+    #     return [_filter.filter(word) for _filter in self._filters]
+
+
+class _WordPicker(QRunnable):
+    class Signals(QObject):
+        publish_word = pyqtSignal(str)
+
+    def __init__(self, word_list, filters):
+        super().__init__()
+        self._word_list = word_list
+        self._filters = filters
+        self.signals = self.Signals()
+        # self.publish_word = self.signals.publish_word
+
+    def run(self):
         while word := random.choice(self._word_list):
-            ic("picking a word")
             if all(self._apply_filters_to(word)):
-                return word.upper()
+                self.signals.publish_word.emit(word)
+                return
 
     def _apply_filters_to(self, word: str):
         return [_filter.filter(word) for _filter in self._filters]
+
