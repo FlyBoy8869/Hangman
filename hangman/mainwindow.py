@@ -17,6 +17,7 @@ ic.configureOutput(includeContext=True)
 _image_logo_path = "resources/images/Logo_1.png"
 _image_win_path = "resources/images/win.png"
 _image_lose_path = "resources/images/lose.jpg"
+_spinner = "resources/images/spinners/spinner.gif"
 
 _alphabet = frozenset("abcdefghijklmnopqrstuvwxyz")
 
@@ -85,7 +86,7 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._result_dialog.run(image)
 
     def _show_spinner(self):
-        movie = QMovie("resources/images/spinners/spinner.gif")
+        movie = QMovie(_spinner)
         movie.setSpeed(500)
         self.label_status.setMovie(movie)
         movie.start()

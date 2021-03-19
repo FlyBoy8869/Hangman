@@ -19,15 +19,21 @@ def _parse_command_line():
     parser.add_argument(
         "--debug_level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Level of debugging message to display.",
+        help="Detail of debugging information to display.",
         required=False
     )
 
     parser.add_argument(
-        "--length",
+        "--range",
         type=int,
-        default=-1,
-        help="Select only words of the specified length"
+        nargs="+",
+        choices={
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            11, 12, 13, 14, 15, 16, 17, 18,
+            19, 20, 21, 22, 23, 24, 25,
+            27, 28, 29, 31
+        },
+        help="Select only words of the specified lengths."
     )
 
     parser.add_argument(
@@ -46,6 +52,8 @@ def _parse_command_line():
 
 
 config = _parse_command_line()
+setattr(config, "word_file_path", "resources/words.txt")
+setattr(config, "number_of_words", 370103)
 
 try:
     from icecream import install, ic

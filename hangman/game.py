@@ -1,12 +1,11 @@
 import logging
 from enum import IntEnum
-from pathlib import Path
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
 from hangman.config import config
-from hangman.wordlist import LengthFilter, WordList
+from hangman.wordpicker import LengthFilter, RangeFilter, WordPicker
 
 
 class GallowsImage(IntEnum):
@@ -54,11 +53,12 @@ class Game(QObject):
 
         self._logger = logging.getLogger("hangman")
 
-        self._word_list = WordList.create_from_file(Path("resources/words.txt"))
-        self._word_list.publish_word.connect(self._received_new_word)
-        if config.length and config.length > 0:
-            word_length = LengthFilter(config.length)
-            self._word_list.add_filter(word_length)
+        self._word_picker = WordPicker()
+        self._word_picker.publish_word.connect(self._received_new_word)
+        if len(config.range) > 1:
+            self._word_picker.add_filter(RangeFilter(config.range))
+        elif config.range:
+            self._word_picker.add_filter(LengthFilter(config.range[0]))
         self._guessed_letters = []
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._word_to_guess = None
@@ -76,11 +76,11 @@ class Game(QObject):
         return self._word_to_guess
 
     def new_game(self) -> None:
-        self._word_list.pick_a_word()
+        self._word_picker.pick_a_word()
 
     def _new_game(self) -> None:
         self._logger.info("Initializing new game state", extra=self.extra)
-        # self._word_to_guess = self._word_list.pick_a_word()
+        # self._word_to_guess = self._word_picker.pick_a_word()
         self._mask = ["-"] * len(self._word_to_guess)
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._guessed_letters = []
