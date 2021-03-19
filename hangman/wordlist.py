@@ -3,7 +3,6 @@ import time
 from pathlib import Path
 
 from PyQt5.QtCore import QRunnable, pyqtSignal, QThreadPool, QObject
-from PyQt5.QtWidgets import QApplication
 
 
 class Filter:
@@ -61,16 +60,10 @@ class WordList(QObject):
         self._filters.append(_filter)
 
     def pick_a_word(self):
-        # while word := random.choice(self._word_list):
-        #     ic("picking a word")
-        #     if all(self._apply_filters_to(word)):
-        #         return word.upper()
         word_picker = _WordPicker(self._word_list, self._filters)
+        # noinspection PyUnresolvedReferences
         word_picker.signals.publish_word.connect(lambda word: self.publish_word.emit(word.upper()))
         QThreadPool.globalInstance().start(word_picker)
-
-    # def _apply_filters_to(self, word: str):
-    #     return [_filter.filter(word) for _filter in self._filters]
 
 
 class _WordPicker(QRunnable):
@@ -82,12 +75,12 @@ class _WordPicker(QRunnable):
         self._word_list = word_list
         self._filters = filters
         self.signals = self.Signals()
-        # self.publish_word = self.signals.publish_word
 
     def run(self):
         while word := random.choice(self._word_list):
             if all(self._apply_filters_to(word)):
                 time.sleep(1.0)
+                # noinspection PyUnresolvedReferences
                 self.signals.publish_word.emit(word)
                 return
 
