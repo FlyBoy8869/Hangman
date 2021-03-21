@@ -28,11 +28,12 @@ def _parse_command_line():
         type=int,
         nargs="+",
         choices={
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            3, 4, 5, 6, 7, 8, 9, 10,
             11, 12, 13, 14, 15, 16, 17, 18,
             19, 20, 21, 22, 23, 24, 25,
             27, 28, 29, 31
         },
+        default=0,
         help="Select only words of the specified lengths."
     )
 
@@ -52,7 +53,7 @@ def _parse_command_line():
 
 
 config = _parse_command_line()
-setattr(config, "word_file_path", "resources/words.txt")
+setattr(config, "word_file_path", "resources/words.dat")
 setattr(config, "number_of_words", 370103)
 
 try:
@@ -71,3 +72,8 @@ else:
         ic = _do_nothing_ic
         builtins = __import__("builtins")
         setattr(builtins, 'ic', ic)
+
+
+def add_attribute(attr, value):
+    global config
+    setattr(config, attr, value)

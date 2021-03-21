@@ -4,7 +4,6 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPixmap, QMovie
 from PyQt5.QtWidgets import QDialog
-from icecream import ic
 
 from . import helpers
 from .config import config
@@ -12,7 +11,6 @@ from .designerforms import Ui_MainDialog
 from .game import Game
 from .resultdialog import ResultDialog
 
-ic.configureOutput(includeContext=True)
 
 _image_logo_path = "resources/images/Logo_1.png"
 _image_win_path = "resources/images/win.png"

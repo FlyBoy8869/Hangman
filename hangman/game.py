@@ -1,11 +1,15 @@
 import logging
 from enum import IntEnum
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap
 
 from hangman.config import config
-from hangman.wordpicker import LengthFilter, RangeFilter, WordPicker
+from hangman.wordpicker import WordPicker
+from hangman.filters import LengthFilter, RangeFilter
+
+
+_spinner_delay: int = 700
 
 
 class GallowsImage(IntEnum):
@@ -55,7 +59,7 @@ class Game(QObject):
 
         self._word_picker = WordPicker()
         self._word_picker.publish_word.connect(self._received_new_word)
-        if len(config.range) > 1:
+        if config.range and len(config.range) > 1:
             self._word_picker.add_filter(RangeFilter(config.range))
         elif config.range:
             self._word_picker.add_filter(LengthFilter(config.range[0]))
@@ -78,6 +82,10 @@ class Game(QObject):
     def new_game(self) -> None:
         self._word_picker.pick_a_word()
 
+    def _received_new_word(self, word: str):
+        self._word_to_guess = word
+        QTimer.singleShot(_spinner_delay, self._new_game)
+
     def _new_game(self) -> None:
         self._logger.info("Initializing new game state", extra=self.extra)
         # self._word_to_guess = self._word_picker.pick_a_word()
@@ -93,10 +101,6 @@ class Game(QObject):
         self._emit_mask_changed()
         # noinspection PyUnresolvedReferences
         self._emit_image_changed(GallowsImage.THE_DREADED_GALLOWS)
-
-    def _received_new_word(self, word: str):
-        self._word_to_guess = word
-        self._new_game()
 
     def process_guess(self, letter) -> None:
         self._logger.info(f"processing guess: '{letter}'", extra=self.extra)

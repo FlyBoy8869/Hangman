@@ -1,16 +1,16 @@
 import random
-import sys
 import time
 
-from PyQt5.QtCore import QObject, QRunnable, QThreadPool, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, QRunnable, QThreadPool
 
 from hangman.config import config
+from hangman.filters import Filter, NoApostropheFilter, NoNumbersFilter
 
 
-class Filter:
-    """Return True if filter succeeds."""
-    def filter(self, word: str):
-        pass
+def _word_generator(path):
+    with open(path, "r") as in_file:
+        for index, word in enumerate(in_file):
+            yield index, word.strip()
 
 
 class WordPicker(QObject):
@@ -18,6 +18,7 @@ class WordPicker(QObject):
 
     def __init__(self, selection_filters: list[Filter] = None):
         super().__init__()
+        self._have_word = False
         self._filters: list[Filter, ...] = [NoApostropheFilter(), NoNumbersFilter(), ]
         if selection_filters:
             self._filters += selection_filters
@@ -27,85 +28,52 @@ class WordPicker(QObject):
         self._filters.append(_filter)
 
     def pick_a_word(self):
-        word_picker = _WordPicker(config.word_file_path, self._filters)
+        picker = _Picker(config.working_length, config.working_file, self._filters)
         # noinspection PyUnresolvedReferences
-        word_picker.signals.publish_word.connect(lambda word: self.publish_word.emit(word.upper()))
+        picker.publish_word.connect(self._receive_word)
+        word_picker = _WordPicker(picker)
         QThreadPool.globalInstance().start(word_picker)
 
-
-def _word_generator(path):
-    with open(path, "r") as in_file:
-        for index, word in enumerate(in_file):
-            yield index, word.strip()
+    def _receive_word(self, word: str) -> None:
+        # noinspection PyUnresolvedReferences
+        self.publish_word.emit(word.upper())
 
 
-class _WordPicker(QRunnable):
-    class Signals(QObject):
-        publish_word = pyqtSignal(str)
+class _Picker(QObject):
+    publish_word = pyqtSignal(str)
 
-    def __init__(self, path, filters):
+    def __init__(self, file_length, path, filters=None):
         super().__init__()
-        self._word_list_path = path
+        self._file_length = file_length
+        self._path = path
         self._filters = filters
-        self.signals = self.Signals()
 
-    def run(self):
-        attempts = 0
+    def pick(self):
         word = ""
         start_time = time.time()
         while True:
-            attempts += 1
-            index = random.randrange(0, config.number_of_words)
-            genny = _word_generator(self._word_list_path)
-            ic(id(genny))
-            ic(sys.getsizeof(genny))
+            index = random.randrange(0, self._file_length)
+            ic(index)
+            genny = _word_generator(self._path)
             for word_index, word in genny:
                 if word_index == index:
-                    ic(index, word, len(word))
                     break
 
             if all(self._apply_filters_to(word)):
                 ic(time.time() - start_time)
-                ic(attempts)
+                ic(word)
                 # noinspection PyUnresolvedReferences
-                self.signals.publish_word.emit(word)
+                self.publish_word.emit(word.upper())
                 return
 
-    def _apply_filters_to(self, word: str):
-        return [_filter.filter(word) for _filter in self._filters]
+    def _apply_filters_to(self, _word: str):
+        return [_filter.filter(_word) for _filter in self._filters]
 
 
-class NoApostropheFilter(Filter):
-    def filter(self, word: str):
-        """Return True if there are no apostrophes in word."""
-        return "'" not in word
+class _WordPicker(QRunnable):
+    def __init__(self, picker):
+        super().__init__()
+        self._picker = picker
 
-
-class NoNumbersFilter(Filter):
-    def filter(self, word: str):
-        return word.isalpha()
-
-
-class BeginsWithLetterFilter(Filter):
-    def __init__(self, letter: str):
-        self._letter = letter.lower()
-
-    def filter(self, word: str):
-        return word.lower().startswith(self._letter)
-
-
-class LengthFilter(Filter):
-    """Return True if word is a certain length."""
-    def __init__(self, length=None):
-        self._length = length
-
-    def filter(self, word: str) -> bool:
-        return len(word) == self._length
-
-
-class RangeFilter(Filter):
-    def __init__(self, lengths: list[int, ...]):
-        self.lengths = lengths
-
-    def filter(self, word: str) -> bool:
-        return len(word) in self.lengths
+    def run(self) -> None:
+        self._picker.pick()
