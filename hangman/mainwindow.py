@@ -5,13 +5,16 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QMovie, QPixmap
 from PyQt5.QtWidgets import QDialog
 
-from hangman import hm
 from . import helpers
 from .config import config
-from .constants import GameResult
 from .designerforms import Ui_MainDialog
 from .game import Game
-from .gameresultdialog import GameResultDialogWrapper
+from .gameresultdialog import GameResult, GameResultDialogWrapper
+
+_alphabet = frozenset("abcdefghijklmnopqrstuvwxyz")
+
+_image_logo_path = "resources/images/Logo_1.png"
+_spinner = "resources/images/spinners/spinner.gif"
 
 
 class MainWindow(QDialog, Ui_MainDialog):
@@ -40,7 +43,7 @@ class MainWindow(QDialog, Ui_MainDialog):
 
         self._result_dialog = GameResultDialogWrapper(parent=self)
 
-        self.label_status.setPixmap(QPixmap(hm.image_logo_path))
+        self.label_status.setPixmap(QPixmap(_image_logo_path))
 
         self.pb_new_game.clicked.connect(self._new_game)
         self.pb_show_world.clicked.connect(lambda: print(f"word = {self._game.word}"))
@@ -58,7 +61,7 @@ class MainWindow(QDialog, Ui_MainDialog):
             ic(self._game.word)
         elif event == self._ctrl_f:
             ic("select filters to apply to the word list")
-        elif event.text() in hm.alphabet:
+        elif event.text() in _alphabet:
             key = chr(event.key())
             ic(key)
             self._game.process_guess(key)
@@ -77,7 +80,7 @@ class MainWindow(QDialog, Ui_MainDialog):
         QTimer.singleShot(0, lambda: self._result_dialog.exec(result))
 
     def _show_spinner(self):
-        movie = QMovie(hm.spinner)
+        movie = QMovie(_spinner)
         movie.setSpeed(self.spinner_speed)
         self.label_status.setMovie(movie)
         movie.start()

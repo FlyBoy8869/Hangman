@@ -1,12 +1,16 @@
+from enum import Enum
+
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPalette, QPixmap
 from PyQt5.QtWidgets import QDialog
 
-from . import constants as const
-from .constants import GameResult
-
 from .designerforms import Ui_ResultDialog
+
+
+class GameResult(Enum):
+    WON = 1
+    LOST = 2
 
 
 class GameResultDialog(QDialog, Ui_ResultDialog):
@@ -33,8 +37,12 @@ _image_paths = {
     GameResult.LOST: _image_lose_path
 }
 
+# rgba
+_orange_shade = (240, 139, 69, 255)
+_pink_shade = (215, 26, 90, 255)
+
 _dialog_window_color = {
-    GameResult.WON: QColor(*const.orange_shade),
+    GameResult.WON: QColor(*_orange_shade),
     GameResult.LOST: Qt.red
 }
 

@@ -5,7 +5,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap
 
 from hangman.config import config
-from hangman.constants import GameResult
+from hangman.gameresultdialog import GameResult
 from hangman.wordpicker import WordPicker
 from hangman.filters import LengthFilter, RangeFilter
 
