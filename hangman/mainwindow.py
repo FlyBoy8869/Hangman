@@ -2,22 +2,15 @@ import logging
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QPixmap, QMovie
+from PyQt5.QtGui import QColor, QMovie, QPalette, QPixmap
 from PyQt5.QtWidgets import QDialog
 
 from . import helpers
 from .config import config
+from hangman import hm
 from .designerforms import Ui_MainDialog
 from .game import Game
 from .resultdialog import ResultDialog
-
-
-_image_logo_path = "resources/images/Logo_1.png"
-_image_win_path = "resources/images/win.png"
-_image_lose_path = "resources/images/lose.jpg"
-_spinner = "resources/images/spinners/spinner.gif"
-
-_alphabet = frozenset("abcdefghijklmnopqrstuvwxyz")
 
 
 class MainWindow(QDialog, Ui_MainDialog):
@@ -44,7 +37,7 @@ class MainWindow(QDialog, Ui_MainDialog):
 
         self._result_dialog = ResultDialog(self)
 
-        self.label_status.setPixmap(QPixmap(_image_logo_path))
+        self.label_status.setPixmap(QPixmap(hm.image_logo_path))
 
         self.pb_new_game.clicked.connect(self._new_game)
         self.pb_show_world.clicked.connect(lambda: print(f"word = {self._game.word}"))
@@ -62,7 +55,7 @@ class MainWindow(QDialog, Ui_MainDialog):
             ic(self._game.word)
         elif event == self._ctrl_f:
             ic("select filters to apply to the word list")
-        elif event.text() in _alphabet:
+        elif event.text() in hm.alphabet:
             key = chr(event.key())
             ic(key)
             self._game.process_guess(key)
@@ -77,14 +70,24 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._game.new_game()
 
     def _game_over(self, result: str) -> None:
-        image_path = _image_win_path if result == "WON" else _image_lose_path
+        palette = QPalette()
+        color = QColor(*hm.orange_shade)
+        image_path = hm.image_win_path
+
+        if result != "WON":
+            color = Qt.red
+            image_path = hm.image_lose_path
+
+        palette.setBrush(QPalette.Window, color)
+        self._result_dialog.setPalette(palette)
+
         QTimer.singleShot(0, lambda: self._show_result_dialog(QPixmap(image_path)))
 
     def _show_result_dialog(self, image: QPixmap) -> None:
         self._result_dialog.run(image)
 
     def _show_spinner(self):
-        movie = QMovie(_spinner)
+        movie = QMovie(hm.spinner)
         movie.setSpeed(500)
         self.label_status.setMovie(movie)
         movie.start()
