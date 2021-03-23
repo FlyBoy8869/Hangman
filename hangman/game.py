@@ -46,8 +46,6 @@ class Game(QObject):
     gameOver = pyqtSignal(GameResult)
     pickingWord = pyqtSignal()
 
-    extra = {"classname": "Game"}
-
     # **********  PUBLIC INTERFACE  ************************************************************************
 
     def __init__(self):
@@ -60,7 +58,6 @@ class Game(QObject):
         elif config.range:
             self._word_picker.add_filter(LengthFilter(config.range[0]))
         self._guessed_letters = []
-        self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._word_to_guess = None
         self._game_over = True
         self._game_state = None
