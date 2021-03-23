@@ -1,10 +1,12 @@
 from pathlib import Path
 
 from hangman import config
+from hangman.patchexceptionhook import patch_exception_hook
 
 _base_folder = "resources/data/words"
 _temp_file = "working_words.dat"
 
+# be sure to change the length if words.dat is ever edited to add or remove words
 _all_words = "resources/data/words/words.dat"
 _all_words_length = 370103
 
@@ -44,4 +46,5 @@ def _create_working_words_file(lengths: list[int, ...]):
 
 
 def do_startup():
+    patch_exception_hook()
     _create_working_words_file(config.config.range)

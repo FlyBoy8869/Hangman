@@ -1,5 +1,3 @@
-import logging
-
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QMovie, QPixmap
@@ -26,8 +24,6 @@ class MainWindow(QDialog, Ui_MainDialog):
         super().__init__()
         self.resize(*self.window_size)
         self.setupUi(self)
-
-        self._logger = logging.getLogger("hangman")
 
         self._ctrl_f = helpers.CtrlKeySequence(Qt.Key_F)
         self._ctrl_n = helpers.CtrlKeySequence(Qt.Key_N)

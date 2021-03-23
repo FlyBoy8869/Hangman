@@ -53,8 +53,6 @@ def _parse_command_line():
 
 
 config = _parse_command_line()
-setattr(config, "word_file_path", "resources/words.dat")
-setattr(config, "number_of_words", 370103)
 
 try:
     from icecream import install, ic
