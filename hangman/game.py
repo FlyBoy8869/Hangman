@@ -5,6 +5,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap
 
 from hangman.config import config
+from hangman.constants import GameResult
 from hangman.wordpicker import WordPicker
 from hangman.filters import LengthFilter, RangeFilter
 
@@ -44,8 +45,7 @@ class Game(QObject):
     guessedLettersUpdated = pyqtSignal(str)
     imageChanged = pyqtSignal(QPixmap)
     maskChanged = pyqtSignal(str)
-    gameOver = pyqtSignal(str)
-    gameWon = pyqtSignal(str)
+    gameOver = pyqtSignal(GameResult)
     pickingWord = pyqtSignal()
 
     extra = {"classname": "Game"}
@@ -117,7 +117,7 @@ class Game(QObject):
             if self._did_win():
                 self._game_over = True
                 # noinspection PyUnresolvedReferences
-                self.gameOver.emit("WON")
+                self.gameOver.emit(GameResult.WON)
         else:
             self._process_wrong_guess()
 
@@ -133,7 +133,7 @@ class Game(QObject):
     def _process_wrong_guess(self):
         if self._is_game_lost():
             # noinspection PyUnresolvedReferences
-            self.gameOver.emit("LOST")
+            self.gameOver.emit(GameResult.LOST)
             self._game_over = True
 
         # noinspection PyUnresolvedReferences

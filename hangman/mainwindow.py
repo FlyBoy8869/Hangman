@@ -2,41 +2,16 @@ import logging
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QColor, QMovie, QPalette, QPixmap
+from PyQt5.QtGui import QMovie, QPixmap
 from PyQt5.QtWidgets import QDialog
 
+from hangman import hm
 from . import helpers
 from .config import config
-from hangman import hm
+from .constants import GameResult
 from .designerforms import Ui_MainDialog
 from .game import Game
-from .resultdialog import ResultDialog
-
-
-class SuccessDialog:
-    def __init__(self, parent=None):
-        self._dialog = ResultDialog(parent)
-
-    def show(self, result) -> None:
-        self._change_palette(result)
-        self._dialog.run(self._get_image(result))
-
-    def _change_palette(self, result) -> None:
-        palette = QPalette()
-        color = QColor(*hm.orange_shade)
-
-        if result != "WON":
-            color = Qt.red
-
-        palette.setBrush(QPalette.Window, color)
-        self._dialog.setPalette(palette)
-
-    def _get_image(self, result) -> QPixmap:
-        image = hm.image_win_path
-        if result != "WON":
-            image = hm.image_lose_path
-
-        return QPixmap(image)
+from .gameresultdialog import GameResultDialogWrapper
 
 
 class MainWindow(QDialog, Ui_MainDialog):
@@ -63,8 +38,7 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._game.gameOver.connect(self._game_over)
         self._game.gameOver.connect(lambda result: self.label_word.setText(self._game.word))
 
-        # self._result_dialog = ResultDialog(self)
-        self._result_dialog = SuccessDialog(self)
+        self._result_dialog = GameResultDialogWrapper(parent=self)
 
         self.label_status.setPixmap(QPixmap(hm.image_logo_path))
 
@@ -98,11 +72,9 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._show_spinner()
         self._game.new_game()
 
-    def _game_over(self, result: str) -> None:
-        QTimer.singleShot(0, lambda: self._show_result_dialog(result))
-
-    def _show_result_dialog(self, result) -> None:
-        self._result_dialog.show(result)
+    def _game_over(self, result: GameResult) -> None:
+        # QTimer is used to allow the last letter guessed to show up immediately
+        QTimer.singleShot(0, lambda: self._result_dialog.exec(result))
 
     def _show_spinner(self):
         movie = QMovie(hm.spinner)

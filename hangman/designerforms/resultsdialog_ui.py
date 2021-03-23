@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_ResultDialog(object):
     def setupUi(self, ResultDialog):
-        ResultDialog.setObjectName("ResultDialog")
+        ResultDialog.setObjectName("GameResultDialog")
         ResultDialog.setWindowModality(QtCore.Qt.ApplicationModal)
         ResultDialog.resize(320, 200)
         ResultDialog.setWindowOpacity(1.0)
@@ -31,4 +31,4 @@ class Ui_ResultDialog(object):
 
     def retranslateUi(self, ResultDialog):
         _translate = QtCore.QCoreApplication.translate
-        ResultDialog.setWindowTitle(_translate("ResultDialog", "Dialog"))
+        ResultDialog.setWindowTitle(_translate("GameResultDialog", "Dialog"))
