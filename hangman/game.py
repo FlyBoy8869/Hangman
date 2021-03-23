@@ -44,7 +44,6 @@ class Game(QObject):
     imageChanged = pyqtSignal(QPixmap)
     maskChanged = pyqtSignal(str)
     gameOver = pyqtSignal(GameResult)
-    pickingWord = pyqtSignal()
 
     # **********  PUBLIC INTERFACE  ************************************************************************
 
@@ -60,7 +59,7 @@ class Game(QObject):
         self._guessed_letters = []
         self._word_to_guess = None
         self._game_over = True
-        self._game_state = None
+        self._image_from_genny = None
         self._current_image = None
         self._mask = []
 
@@ -84,8 +83,8 @@ class Game(QObject):
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._guessed_letters = []
         self._game_over = False
-        self._game_state = _advance_gallows_image()
-        self._current_image = next(self._game_state)
+        self._image_from_genny = _advance_gallows_image()
+        self._current_image = next(self._image_from_genny)
 
         self._emit_available_letters()
         # noinspection PyUnresolvedReferences
@@ -100,7 +99,7 @@ class Game(QObject):
         self._record_letter(letter)
         self._remove_letter_choice(letter)
 
-        if self._word_contains_letter(letter):
+        if self._letter_in_word(letter):
             self._update_mask(letter)
 
             if self._did_win():
@@ -116,7 +115,7 @@ class Game(QObject):
         return self.mask == self._word_to_guess
 
     def _is_game_lost(self):
-        self._current_image: GallowsImage = next(self._game_state)
+        self._current_image: GallowsImage = next(self._image_from_genny)
         return self._current_image == GallowsImage.LEFT_LEG
 
     def _process_wrong_guess(self):
@@ -168,7 +167,7 @@ class Game(QObject):
         # noinspection PyUnresolvedReferences
         self._emit_mask_changed()
 
-    def _word_contains_letter(self, letter: str) -> bool:
+    def _letter_in_word(self, letter: str) -> bool:
         return letter in self._word_to_guess
 
     # **********  PRIVATE INTERFACE - STATIC METHODS  *****************************************************
