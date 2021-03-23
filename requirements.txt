@@ -1,4 +1,2 @@
 PyQt5
-PyQt5-Qt
-PyQt5-sip
 icecream
