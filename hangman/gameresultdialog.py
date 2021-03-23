@@ -29,7 +29,7 @@ class GameResultDialog(QDialog, Ui_ResultDialog):
         self.label_result.setPixmap(image)
 
 
-_image_win_path = "resources/images/win_1.png"
+_image_win_path = "resources/images/win.png"
 _image_lose_path = "resources/images/lose.jpg"
 
 _image_paths = {
