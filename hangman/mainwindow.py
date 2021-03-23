@@ -13,12 +13,40 @@ from .game import Game
 from .resultdialog import ResultDialog
 
 
+class SuccessDialog:
+    def __init__(self, parent=None):
+        self._dialog = ResultDialog(parent)
+
+    def show(self, result) -> None:
+        self._change_palette(result)
+        self._dialog.run(self._get_image(result))
+
+    def _change_palette(self, result) -> None:
+        palette = QPalette()
+        color = QColor(*hm.orange_shade)
+
+        if result != "WON":
+            color = Qt.red
+
+        palette.setBrush(QPalette.Window, color)
+        self._dialog.setPalette(palette)
+
+    def _get_image(self, result) -> QPixmap:
+        image = hm.image_win_path
+        if result != "WON":
+            image = hm.image_lose_path
+
+        return QPixmap(image)
+
+
 class MainWindow(QDialog, Ui_MainDialog):
     extra = {"classname": "MainWindow"}
+    window_size = (1000, 785)
+    spinner_speed = 500
 
     def __init__(self):
         super().__init__()
-        self.resize(1000, 785)
+        self.resize(*self.window_size)
         self.setupUi(self)
 
         self._logger = logging.getLogger("hangman")
@@ -35,7 +63,8 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._game.gameOver.connect(self._game_over)
         self._game.gameOver.connect(lambda result: self.label_word.setText(self._game.word))
 
-        self._result_dialog = ResultDialog(self)
+        # self._result_dialog = ResultDialog(self)
+        self._result_dialog = SuccessDialog(self)
 
         self.label_status.setPixmap(QPixmap(hm.image_logo_path))
 
@@ -70,24 +99,13 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._game.new_game()
 
     def _game_over(self, result: str) -> None:
-        palette = QPalette()
-        color = QColor(*hm.orange_shade)
-        image_path = hm.image_win_path
+        QTimer.singleShot(0, lambda: self._show_result_dialog(result))
 
-        if result != "WON":
-            color = Qt.red
-            image_path = hm.image_lose_path
-
-        palette.setBrush(QPalette.Window, color)
-        self._result_dialog.setPalette(palette)
-
-        QTimer.singleShot(0, lambda: self._show_result_dialog(QPixmap(image_path)))
-
-    def _show_result_dialog(self, image: QPixmap) -> None:
-        self._result_dialog.run(image)
+    def _show_result_dialog(self, result) -> None:
+        self._result_dialog.show(result)
 
     def _show_spinner(self):
         movie = QMovie(hm.spinner)
-        movie.setSpeed(500)
+        movie.setSpeed(self.spinner_speed)
         self.label_status.setMovie(movie)
         movie.start()
