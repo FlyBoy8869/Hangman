@@ -30,7 +30,7 @@ class GameResultDialog(QDialog, Ui_ResultDialog):
 
 
 _image_win_path = "resources/images/win.png"
-_image_lose_path = "resources/images/lose.jpg"
+_image_lose_path = "resources/images/lose.png"
 
 _image_paths = {
     GameResult.WON: _image_win_path,
