@@ -80,7 +80,6 @@ class Game(QObject):
         QTimer.singleShot(_spinner_delay, self._new_game)
 
     def _new_game(self) -> None:
-        # self._word_to_guess = self._word_picker.pick_a_word()
         self._mask = ["-"] * len(self._word_to_guess)
         self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         self._guessed_letters = []
