@@ -1,4 +1,5 @@
 from enum import IntEnum
+from typing import Iterator
 
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
@@ -21,8 +22,12 @@ class GallowsImage(IntEnum):
     LEFT_LEG = 6
 
 
+def _advance_gallows_image() -> Iterator[GallowsImage]:
+    yield from GallowsImage
+
+
 _body = config.body
-_image_paths = {
+_image_paths: dict[GallowsImage, str] = {
     GallowsImage.THE_DREADED_GALLOWS: f"resources/images/{_body}/gallows.png",
     GallowsImage.HEAD: f"resources/images/{_body}/head.png",
     GallowsImage.TORSO: f"resources/images/{_body}/torso.png",
@@ -33,9 +38,53 @@ _image_paths = {
 }
 
 
-def _advance_gallows_image():
-    for image in GallowsImage:
-        yield image
+class LetterTracker:
+    """Tracks letters guessed and letters remaining from the Alphabet."""
+    def __init__(self):
+        self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        self._guessed_letters = []
+
+    @property
+    def available_letters(self):
+        return self._available_letters
+
+    @property
+    def guessed_letters(self):
+        return self._guessed_letters
+
+    def track_it(self, letter: str) -> bool:
+        """Returns True if letter already tracked, False otherwise."""
+        if letter not in self._guessed_letters:
+            self._track(letter)
+            self._remove_from_available_letters(letter)
+            return False
+        return True
+
+    def _track(self, letter: str):
+        self._guessed_letters.append(letter)
+
+    def _remove_from_available_letters(self, letter: str) -> None:
+        self._available_letters = self._available_letters.replace(letter, "")
+
+
+class GuessProcessor:
+    def __init__(self, word: str):
+        self._word = word
+        self._letter_tracker = LetterTracker()
+        self._remaining_guesses = 6
+
+    def process(self, letter: str):
+        if self._tracked(letter):
+            return
+
+        return self._have_any_guesses_left()
+
+    def _tracked(self, letter: str) -> bool:
+        return self._letter_tracker.track_it(letter)
+
+    def _have_any_guesses_left(self):
+        self._remaining_guesses -= 1
+        return self._remaining_guesses
 
 
 class Game(QObject):
@@ -52,16 +101,20 @@ class Game(QObject):
 
         self._word_picker = WordPicker()
         self._word_picker.publish_word.connect(self._received_new_word)
-        if config.range and len(config.range) > 1:
-            self._word_picker.add_filter(RangeFilter(config.range))
-        elif config.range:
-            self._word_picker.add_filter(LengthFilter(config.range[0]))
-        self._guessed_letters = []
-        self._word_to_guess = None
-        self._game_over = True
-        self._image_from_genny = None
-        self._current_image = None
-        self._mask = []
+
+        self._letter_tracker = LetterTracker()
+
+        self._word_to_guess: str
+        self._mask: list
+        self._image_from_genny: Iterator[GallowsImage]
+        self._current_image: GallowsImage
+        self._game_over: bool = False
+
+        if config.range:
+            if len(config.range) > 1:
+                self._word_picker.add_filter(RangeFilter(config.range))
+            else:
+                self._word_picker.add_filter(LengthFilter(config.range[0]))
 
     @property
     def mask(self) -> str:
@@ -75,16 +128,15 @@ class Game(QObject):
         self._word_picker.pick_a_word()
 
     def _received_new_word(self, word: str):
-        self._word_to_guess = word
-        QTimer.singleShot(_spinner_delay, self._new_game)
+        QTimer.singleShot(_spinner_delay, lambda: self._new_game(word))
 
-    def _new_game(self) -> None:
+    def _new_game(self, word: str) -> None:
+        self._word_to_guess = word
+        self._letter_tracker = LetterTracker()
         self._mask = ["-"] * len(self._word_to_guess)
-        self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        self._guessed_letters = []
-        self._game_over = False
         self._image_from_genny = _advance_gallows_image()
         self._current_image = next(self._image_from_genny)
+        self._game_over = False
 
         self._emit_available_letters()
         # noinspection PyUnresolvedReferences
@@ -93,11 +145,11 @@ class Game(QObject):
         self._emit_image_changed(GallowsImage.THE_DREADED_GALLOWS)
 
     def process_guess(self, letter) -> None:
-        if self._game_over or letter in self._guessed_letters:
+        if self._game_over or self._letter_tracker.track_it(letter):
             return
 
-        self._record_letter(letter)
-        self._remove_letter_choice(letter)
+        self._emit_guessed_letters()
+        self._emit_available_letters()
 
         if self._letter_in_word(letter):
             self._update_mask(letter)
@@ -115,7 +167,7 @@ class Game(QObject):
         return self.mask == self._word_to_guess
 
     def _is_game_lost(self):
-        self._current_image: GallowsImage = next(self._image_from_genny)
+        self._current_image = next(self._image_from_genny)
         return self._current_image == GallowsImage.LEFT_LEG
 
     def _process_wrong_guess(self):
@@ -131,6 +183,10 @@ class Game(QObject):
         # noinspection PyUnresolvedReferences
         self.availableLetters.emit(self._get_available_letters())
 
+    def _emit_guessed_letters(self):
+        # noinspection PyUnresolvedReferences
+        self.guessedLettersUpdated.emit(self._get_guessed_letters())
+
     def _emit_image_changed(self, index: GallowsImage):
         # noinspection PyUnresolvedReferences
         self.imageChanged.emit(QPixmap(_image_paths[index]))
@@ -140,26 +196,17 @@ class Game(QObject):
         self.maskChanged.emit(self.mask)
 
     def _get_available_letters(self):
-        return self._join(self._available_letters, " ")
+        return self._join(self._letter_tracker.available_letters, " ")
 
     def _get_guessed_letters(self):
-        return self._join(self._guessed_letters, " ")
-
-    def _record_letter(self, letter: str) -> None:
-        self._guessed_letters.append(letter)
-        # noinspection PyUnresolvedReferences
-        self.guessedLettersUpdated.emit(self._get_guessed_letters())
-
-    def _remove_letter_choice(self, letter) -> None:
-        self._available_letters = self._available_letters.replace(letter, "")
-        # noinspection PyUnresolvedReferences
-        self._emit_available_letters()
+        return self._join(self._letter_tracker.guessed_letters, " ")
 
     def _update_mask(self, letter: str) -> None:
-        indexes = []
-        for index, char in enumerate(self._word_to_guess):
-            if letter == char:
-                indexes.append(index)
+        indexes = [
+            index
+            for index, char in enumerate(self._word_to_guess)
+            if letter == char
+        ]
 
         for index in indexes:
             self._mask[index] = letter
