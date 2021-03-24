@@ -138,24 +138,23 @@ class Game(QObject):
         self._current_image = next(self._image_from_genny)
         self._game_over = False
 
-        self._emit_available_letters()
-        self._emit_mask_changed()
-        self._emit_change_image(GallowsImage.THE_DREADED_GALLOWS)
+        self._emit_signal(self.availableLetters, self._get_available_letters())
+        self._emit_signal(self.maskChanged, self.mask)
+        self._emit_signal(self.changeImage, QPixmap(_image_paths[GallowsImage.THE_DREADED_GALLOWS]))
 
     def process_guess(self, letter) -> None:
         if self._game_over or self._letter_tracker.track_it(letter):
             return
 
-        self._emit_guessed_letters()
-        self._emit_available_letters()
+        self._emit_signal(self.guessedLettersUpdated, self._get_guessed_letters())
+        self._emit_signal(self.availableLetters, self._get_available_letters())
 
         if self._letter_in_word(letter):
             self._update_mask(letter)
 
             if self._did_win():
                 self._game_over = True
-                # noinspection PyUnresolvedReferences
-                self.gameOver.emit(GameResult.WON)
+                self._emit_signal(self.gameOver, GameResult.WON)
         else:
             self._process_wrong_guess()
 
@@ -170,28 +169,10 @@ class Game(QObject):
 
     def _process_wrong_guess(self):
         if self._is_game_lost():
-            # noinspection PyUnresolvedReferences
-            self.gameOver.emit(GameResult.LOST)
+            self._emit_signal(self.gameOver, GameResult.LOST)
             self._game_over = True
 
-        # noinspection PyUnresolvedReferences
-        self._emit_change_image(self._current_image)
-
-    def _emit_available_letters(self):
-        # noinspection PyUnresolvedReferences
-        self.availableLetters.emit(self._get_available_letters())
-
-    def _emit_guessed_letters(self):
-        # noinspection PyUnresolvedReferences
-        self.guessedLettersUpdated.emit(self._get_guessed_letters())
-
-    def _emit_change_image(self, index: GallowsImage):
-        # noinspection PyUnresolvedReferences
-        self.changeImage.emit(QPixmap(_image_paths[index]))
-
-    def _emit_mask_changed(self):
-        # noinspection PyUnresolvedReferences
-        self.maskChanged.emit(self.mask)
+        self._emit_signal(self.changeImage, QPixmap(_image_paths[self._current_image]))
 
     def _get_available_letters(self):
         return self._join(self._letter_tracker.available_letters, " ")
@@ -209,8 +190,7 @@ class Game(QObject):
         for index in indexes:
             self._mask[index] = letter
 
-        # noinspection PyUnresolvedReferences
-        self._emit_mask_changed()
+        self._emit_signal(self.maskChanged, self.mask)
 
     def _letter_in_word(self, letter: str) -> bool:
         return letter in self._word_to_guess
@@ -220,3 +200,12 @@ class Game(QObject):
     @staticmethod
     def _join(sequence, separator: str):
         return separator.join(sequence)
+
+    @staticmethod
+    def _emit_signal(signal: pyqtSignal, data=None):
+        if data:
+            # noinspection PyUnresolvedReferences
+            signal.emit(data)
+        else:
+            # noinspection PyUnresolvedReferences
+            signal.emit()
