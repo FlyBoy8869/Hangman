@@ -140,7 +140,7 @@ class Game(QObject):
 
         self._emit_available_letters()
         self._emit_mask_changed()
-        self._emit_image_changed(GallowsImage.THE_DREADED_GALLOWS)
+        self._emit_change_image(GallowsImage.THE_DREADED_GALLOWS)
 
     def process_guess(self, letter) -> None:
         if self._game_over or self._letter_tracker.track_it(letter):
@@ -175,7 +175,7 @@ class Game(QObject):
             self._game_over = True
 
         # noinspection PyUnresolvedReferences
-        self._emit_image_changed(self._current_image)
+        self._emit_change_image(self._current_image)
 
     def _emit_available_letters(self):
         # noinspection PyUnresolvedReferences
@@ -185,7 +185,7 @@ class Game(QObject):
         # noinspection PyUnresolvedReferences
         self.guessedLettersUpdated.emit(self._get_guessed_letters())
 
-    def _emit_image_changed(self, index: GallowsImage):
+    def _emit_change_image(self, index: GallowsImage):
         # noinspection PyUnresolvedReferences
         self.changeImage.emit(QPixmap(_image_paths[index]))
 
