@@ -90,7 +90,7 @@ class GuessProcessor:
 class Game(QObject):
     availableLetters = pyqtSignal(str)
     guessedLettersUpdated = pyqtSignal(str)
-    imageChanged = pyqtSignal(QPixmap)
+    changeImage = pyqtSignal(QPixmap)
     maskChanged = pyqtSignal(str)
     gameOver = pyqtSignal(GameResult)
 
@@ -187,7 +187,7 @@ class Game(QObject):
 
     def _emit_image_changed(self, index: GallowsImage):
         # noinspection PyUnresolvedReferences
-        self.imageChanged.emit(QPixmap(_image_paths[index]))
+        self.changeImage.emit(QPixmap(_image_paths[index]))
 
     def _emit_mask_changed(self):
         # noinspection PyUnresolvedReferences

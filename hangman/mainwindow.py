@@ -32,7 +32,7 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._game = Game()
         self._game.availableLetters.connect(self.label_available_letters.setText)
         self._game.guessedLettersUpdated.connect(self.label_guessed_letters.setText)
-        self._game.imageChanged.connect(self.label_status.setPixmap)
+        self._game.changeImage.connect(self.label_status.setPixmap)
         self._game.maskChanged.connect(self.label_word.setText)
         self._game.gameOver.connect(self._game_over)
         self._game.gameOver.connect(lambda result: self.label_word.setText(self._game.word))
