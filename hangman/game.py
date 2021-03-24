@@ -131,17 +131,15 @@ class Game(QObject):
         QTimer.singleShot(_spinner_delay, lambda: self._new_game(word))
 
     def _new_game(self, word: str) -> None:
-        self._word_to_guess = word
         self._letter_tracker = LetterTracker()
+        self._word_to_guess = word
         self._mask = ["-"] * len(self._word_to_guess)
         self._image_from_genny = _advance_gallows_image()
         self._current_image = next(self._image_from_genny)
         self._game_over = False
 
         self._emit_available_letters()
-        # noinspection PyUnresolvedReferences
         self._emit_mask_changed()
-        # noinspection PyUnresolvedReferences
         self._emit_image_changed(GallowsImage.THE_DREADED_GALLOWS)
 
     def process_guess(self, letter) -> None:
