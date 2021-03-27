@@ -39,57 +39,31 @@ _image_paths: dict[GallowsImage, str] = {
 
 
 class LetterTracker:
-    """Tracks letters guessed and letters remaining from the Alphabet."""
+    """Records guessed letters of the Alphabet."""
     def __init__(self):
-        self._available_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        self._guessed_letters = []
+        self._alphabet = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        self._used_letters = ()
 
     @property
-    def available_letters(self):
-        return self._available_letters
+    def used(self):
+        return self._used_letters
 
     @property
-    def guessed_letters(self):
-        return self._guessed_letters
+    def unused(self) -> tuple[str, ...]:
+        return tuple(sorted(self._alphabet.difference(self.used)))
 
-    def track_it(self, letter: str) -> bool:
-        """Returns True if letter already tracked, False otherwise."""
-        if letter not in self._guessed_letters:
-            self._track(letter)
-            self._remove_from_available_letters(letter)
-            return False
-        return True
+    def record(self, letter: str) -> None:
+        """Tracks a letter."""
+        if letter not in self.used:
+            self._used_letters += letter,
 
-    def _track(self, letter: str):
-        self._guessed_letters.append(letter)
-
-    def _remove_from_available_letters(self, letter: str) -> None:
-        self._available_letters = self._available_letters.replace(letter, "")
-
-
-class GuessProcessor:
-    def __init__(self, word: str):
-        self._word = word
-        self._letter_tracker = LetterTracker()
-        self._remaining_guesses = 6
-
-    def process(self, letter: str):
-        if self._tracked(letter):
-            return
-
-        return self._have_any_guesses_left()
-
-    def _tracked(self, letter: str) -> bool:
-        return self._letter_tracker.track_it(letter)
-
-    def _have_any_guesses_left(self):
-        self._remaining_guesses -= 1
-        return self._remaining_guesses
+    def has_been_used(self, letter: str) -> bool:
+        return letter in self.used
 
 
 class Game(QObject):
     availableLetters = pyqtSignal(str)
-    guessedLettersUpdated = pyqtSignal(str)
+    guessedLetters = pyqtSignal(str)
     changeImage = pyqtSignal(QPixmap)
     maskChanged = pyqtSignal(str)
     gameOver = pyqtSignal(GameResult)
@@ -102,12 +76,12 @@ class Game(QObject):
         self._word_picker = WordPicker()
         self._word_picker.publish_word.connect(self._received_new_word)
 
-        self._letter_tracker = LetterTracker()
+        self._tracker = LetterTracker()
 
         self._word_to_guess: str
         self._mask: list
         self._image_from_genny: Iterator[GallowsImage]
-        self._current_image: GallowsImage
+        self._gallows_image: GallowsImage
         self._game_over: bool = False
 
         if config.range:
@@ -127,32 +101,18 @@ class Game(QObject):
     def new_game(self) -> None:
         self._word_picker.pick_a_word()
 
-    def _received_new_word(self, word: str):
-        QTimer.singleShot(_spinner_delay, lambda: self._new_game(word))
-
-    def _new_game(self, word: str) -> None:
-        self._letter_tracker = LetterTracker()
-        self._word_to_guess = word
-        self._mask = ["-"] * len(self._word_to_guess)
-        self._image_from_genny = _advance_gallows_image()
-        self._current_image = next(self._image_from_genny)
-        self._game_over = False
-
-        self._emit_signal(self.availableLetters, self._get_available_letters())
-        self._emit_signal(self.maskChanged, self.mask)
-        self._emit_signal(self.changeImage, QPixmap(_image_paths[GallowsImage.THE_DREADED_GALLOWS]))
-
     def process_guess(self, letter) -> None:
-        if self._game_over or self._letter_tracker.track_it(letter):
+        if self._game_over or self._tracking(letter, self._tracker):
             return
 
-        self._emit_signal(self.guessedLettersUpdated, self._get_guessed_letters())
-        self._emit_signal(self.availableLetters, self._get_available_letters())
+        self._track(letter, self._tracker)
+        self._emit_signal(self.guessedLetters, self._format_guessed_letters_separated_by_spaces())
+        self._emit_signal(self.availableLetters, self._format_available_letters_separated_by_spaces())
 
-        if self._letter_in_word(letter):
+        if self._letter_in_word(letter, self._word_to_guess):
             self._update_mask(letter)
 
-            if self._did_win():
+            if self._did_win(self.mask, self._word_to_guess):
                 self._game_over = True
                 self._emit_signal(self.gameOver, GameResult.WON)
         else:
@@ -160,25 +120,34 @@ class Game(QObject):
 
     # **********  PRIVATE  INTERFACE  **********************************************************************
 
-    def _did_win(self) -> bool:
-        return self.mask == self._word_to_guess
+    def _format_available_letters_separated_by_spaces(self) -> str:
+        return self._join(self._tracker.unused, " ")
 
-    def _is_game_lost(self):
-        self._current_image = next(self._image_from_genny)
-        return self._current_image == GallowsImage.LEFT_LEG
+    def _format_guessed_letters_separated_by_spaces(self) -> str:
+        return self._join(self._tracker.used, " ")
 
-    def _process_wrong_guess(self):
-        if self._is_game_lost():
+    def _new_game(self, word: str) -> None:
+        self._tracker = LetterTracker()
+        self._word_to_guess = word
+        self._mask = ["-"] * len(self._word_to_guess)
+        self._image_from_genny = _advance_gallows_image()
+        self._gallows_image = next(self._image_from_genny)
+        self._game_over = False
+
+        self._emit_signal(self.availableLetters, self._format_available_letters_separated_by_spaces())
+        self._emit_signal(self.maskChanged, self.mask)
+        self._emit_signal(self.changeImage, self._get_image(GallowsImage.THE_DREADED_GALLOWS))
+
+    def _process_wrong_guess(self) -> None:
+        self._gallows_image = next(self._image_from_genny)
+        if self._is_game_lost(self._gallows_image, GallowsImage.LEFT_LEG):
             self._emit_signal(self.gameOver, GameResult.LOST)
             self._game_over = True
 
-        self._emit_signal(self.changeImage, QPixmap(_image_paths[self._current_image]))
+        self._emit_signal(self.changeImage, self._get_image(self._gallows_image))
 
-    def _get_available_letters(self):
-        return self._join(self._letter_tracker.available_letters, " ")
-
-    def _get_guessed_letters(self):
-        return self._join(self._letter_tracker.guessed_letters, " ")
+    def _received_new_word(self, word: str) -> None:
+        QTimer.singleShot(_spinner_delay, lambda: self._new_game(word))
 
     def _update_mask(self, letter: str) -> None:
         indexes = [
@@ -192,20 +161,41 @@ class Game(QObject):
 
         self._emit_signal(self.maskChanged, self.mask)
 
-    def _letter_in_word(self, letter: str) -> bool:
-        return letter in self._word_to_guess
-
     # **********  PRIVATE INTERFACE - STATIC METHODS  *****************************************************
 
     @staticmethod
-    def _join(sequence, separator: str):
-        return separator.join(sequence)
+    def _did_win(mask: str, word: str) -> bool:
+        return mask == word
 
     @staticmethod
-    def _emit_signal(signal: pyqtSignal, data=None):
+    def _emit_signal(signal: pyqtSignal, data=None) -> None:
         if data:
             # noinspection PyUnresolvedReferences
             signal.emit(data)
         else:
             # noinspection PyUnresolvedReferences
             signal.emit()
+
+    @staticmethod
+    def _get_image(index: GallowsImage) -> QPixmap:
+        return QPixmap(_image_paths[index])
+
+    @staticmethod
+    def _is_game_lost(image: GallowsImage, losing_criteria: GallowsImage) -> bool:
+        return image == losing_criteria
+
+    @staticmethod
+    def _join(sequence, separator: str) -> str:
+        return separator.join(sequence)
+
+    @staticmethod
+    def _letter_in_word(letter: str, word: str) -> bool:
+        return letter in word
+
+    @staticmethod
+    def _track(letter: str, tracker: LetterTracker) -> None:
+        tracker.record(letter)
+
+    @staticmethod
+    def _tracking(letter: str, tracker: LetterTracker) -> bool:
+        return tracker.has_been_used(letter)
