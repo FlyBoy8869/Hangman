@@ -61,6 +61,21 @@ class LetterTracker:
         return letter in self.used
 
 
+class Mask:
+    def __init__(self, word: str):
+        self._word = word
+        self._mask = ["-"] * len(word)
+
+    @property
+    def mask(self):
+        return "".join(self._mask)
+
+    def update(self, letter: str) -> None:
+        for index, char in enumerate(self._word):
+            if char == letter:
+                self._mask[index] = letter
+
+
 class Game(QObject):
     availableLetters = pyqtSignal(str)
     guessedLetters = pyqtSignal(str)
@@ -79,7 +94,7 @@ class Game(QObject):
         self._tracker = LetterTracker()
 
         self._word_to_guess: str
-        self._mask: list
+        self._mask: Mask
         self._image_from_genny: Iterator[GallowsImage]
         self._gallows_image: GallowsImage
         self._game_over: bool = False
@@ -92,7 +107,7 @@ class Game(QObject):
 
     @property
     def mask(self) -> str:
-        return self._join(self._mask, "")
+        return self._mask.mask
 
     @property
     def word(self) -> str:
@@ -129,7 +144,7 @@ class Game(QObject):
     def _new_game(self, word: str) -> None:
         self._tracker = LetterTracker()
         self._word_to_guess = word
-        self._mask = ["-"] * len(self._word_to_guess)
+        self._mask = Mask(self._word_to_guess)
         self._image_from_genny = _advance_gallows_image()
         self._gallows_image = next(self._image_from_genny)
         self._game_over = False
@@ -150,15 +165,7 @@ class Game(QObject):
         QTimer.singleShot(_spinner_delay, lambda: self._new_game(word))
 
     def _update_mask(self, letter: str) -> None:
-        indexes = [
-            index
-            for index, char in enumerate(self._word_to_guess)
-            if letter == char
-        ]
-
-        for index in indexes:
-            self._mask[index] = letter
-
+        self._mask.update(letter)
         self._emit_signal(self.maskChanged, self.mask)
 
     # **********  PRIVATE INTERFACE - STATIC METHODS  *****************************************************
