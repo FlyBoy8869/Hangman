@@ -1,4 +1,5 @@
 import random
+from typing import IO
 
 from PyQt5.QtCore import QObject, pyqtSignal, QRunnable, QThreadPool
 
@@ -16,23 +17,32 @@ class _WordPicker(QObject):
 
     def pick(self):
         while True:
-            genny = self._word_generator(self._path)
-            index = random.randrange(0, self._word_count)
-            word = ""
-            for word_index, word in genny:
-                if word_index == index:
-                    break
-
+            word = self._get_word(
+                at_index=self._get_index(self._word_count),
+                from_path=self._path
+            )
+            if word and not self._filters:
+                break
             if self._filters.apply(word):
-                # noinspection PyUnresolvedReferences
-                self.publish_word.emit(word.upper())
-                return
+                break
+
+        # noinspection PyUnresolvedReferences
+        self.publish_word.emit(word.upper())
+
+    def _get_word(self, *, at_index: int, from_path: str) -> str:
+        with open(from_path, "r") as infile:
+            word = self._find_word_in_file(at_index, infile)
+        return word
 
     @staticmethod
-    def _word_generator(path):
-        with open(path, "r") as in_file:
-            for index, word in enumerate(in_file):
-                yield index, word.strip()
+    def _get_index(upper_limit: int) -> int:
+        return random.randrange(0, upper_limit)
+
+    @staticmethod
+    def _find_word_in_file(at_index: int, file: IO[str]) -> str:
+        for index, word in enumerate(file):
+            if at_index == index:
+                return word.strip()
 
 
 class _WordPickerRunnable(QRunnable):
