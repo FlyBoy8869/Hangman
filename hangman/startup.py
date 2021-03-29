@@ -13,8 +13,7 @@ _all_words_length = 370103
 
 def _make_file_genny(path):
     with open(path, "r") as infile:
-        for word in infile:
-            yield word
+        yield from infile
 
 
 def _make_file_list(names: list[int, ...]) -> list[Path, ...]:
@@ -38,11 +37,11 @@ def _create_working_words_file(lengths: list[int, ...]):
     if lengths:
         paths = _make_file_list(lengths)
         file_length = _combine_files(paths)
-        config.add_attribute("working_length", file_length)
-        config.add_attribute("working_file", Path(_base_folder) / _temp_file)
+        config.add_attribute("word_count", file_length)
+        config.add_attribute("word_path", Path(_base_folder) / _temp_file)
     else:
-        config.add_attribute("working_length", _all_words_length)
-        config.add_attribute("working_file", Path(_all_words))
+        config.add_attribute("word_count", _all_words_length)
+        config.add_attribute("word_path", Path(_all_words))
 
 
 def do_startup():

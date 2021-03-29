@@ -1,3 +1,7 @@
+import time
+from typing import List
+
+
 class Filter:
     """Return True if filter succeeds."""
     def filter(self, word: str):
@@ -38,3 +42,22 @@ class RangeFilter(Filter):
 
     def filter(self, word: str) -> bool:
         return len(word) in self.lengths
+
+
+class FilterCollection:
+    def __init__(self, filters: List[Filter] = None):
+        self._filters = filters or list()
+
+    def add(self, filter_: Filter):
+        self._filters.append(filter_)
+
+    def apply(self, word: str) -> bool:
+        start_time = time.time()
+        if all(self._apply_filters_to(word)):
+            ic(time.time() - start_time)
+            ic(word)
+            return True
+        return False
+
+    def _apply_filters_to(self, word: str):
+        return [_filter.filter(word) for _filter in self._filters]

@@ -5,7 +5,7 @@ from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
 from hangman.config import config
-from hangman.filters import LengthFilter, RangeFilter
+from hangman.filters import LengthFilter, RangeFilter, FilterCollection
 from hangman.gameresultdialog import GameResult
 from hangman.wordpicker import WordPicker
 
@@ -88,9 +88,6 @@ class Game(QObject):
     def __init__(self):
         super().__init__()
 
-        self._word_picker = WordPicker()
-        self._word_picker.publish_word.connect(self._received_new_word)
-
         self._tracker = LetterTracker()
 
         self._word_to_guess: str
@@ -99,11 +96,15 @@ class Game(QObject):
         self._gallows_image: GallowsImage
         self._game_over: bool = False
 
+        self._word_picker = WordPicker(config.word_count, config.word_path)
+        self._word_picker.publish_word.connect(self._received_new_word)
+
         if config.range:
             if len(config.range) > 1:
-                self._word_picker.add_filter(RangeFilter(config.range))
+                filter_ = RangeFilter(config.range)
             else:
-                self._word_picker.add_filter(LengthFilter(config.range[0]))
+                filter_ = LengthFilter(config.range[0])
+            self._word_picker.set_filters(FilterCollection([filter_]))
 
     @property
     def mask(self) -> str:
