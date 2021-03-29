@@ -99,12 +99,12 @@ class Game(QObject):
         self._word_picker = WordPicker(config.word_count, config.word_path)
         self._word_picker.publish_word.connect(self._received_new_word)
 
-        if config.range:
-            if len(config.range) > 1:
-                filter_ = RangeFilter(config.range)
-            else:
-                filter_ = LengthFilter(config.range[0])
-            self._word_picker.set_filters(FilterCollection([filter_]))
+        # if config.range:
+        #     if len(config.range) > 1:
+        #         filter_ = RangeFilter(config.range)
+        #     else:
+        #         filter_ = LengthFilter(config.range[0])
+        #     self._word_picker.set_filters(FilterCollection([filter_]))
 
     @property
     def mask(self) -> str:
@@ -163,6 +163,7 @@ class Game(QObject):
         self._emit_signal(self.changeImage, self._get_image(self._gallows_image))
 
     def _received_new_word(self, word: str) -> None:
+        ic(word)
         QTimer.singleShot(_spinner_delay, lambda: self._new_game(word))
 
     def _update_mask(self, letter: str) -> None:
