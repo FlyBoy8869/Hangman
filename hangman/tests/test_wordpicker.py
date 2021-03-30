@@ -1,44 +1,44 @@
+# noinspection PyPackageRequirements
+import pytest
+
 from io import StringIO
-from unittest import TestCase
 
 from hangman.wordpicker import _WordPicker
 
 
-class Test_WordPicker(TestCase):
-    def setUp(self) -> None:
-        sentence = "There once was a man from nantucket who had a dick so long he could suck it".upper()
-        word_list = sentence.split(" ")
-        self.words = "\n".join(word_list)
-        self.buffer = StringIO(self.words)
+class Fixture:
+    def __init__(self):
+        sentence = "there once was a man from nantucket who had a dick so long he could suck it".upper()
+        #          "  0     1   2  3  4   5       6      7   8  9  10  11  12  13   14   15  16"
+        self.word_list = sentence.split(" ")
+        self.file_obj = StringIO("\n".join(self.word_list))
+        self.wp_protected = _WordPicker(len(self.word_list), self.file_obj)
+        self.wp_protected.publish_word.connect(lambda word: print(word))
 
-        self.wp = _WordPicker(len(word_list), self.buffer)
 
-        self.received_word = ""
+@pytest.fixture
+def fixture():
+    return Fixture()
 
-    def tearDown(self) -> None:
-        self.buffer.close()
 
-    def test_pick_no_filters(self):
-        def word_published(word):
-            self.received_word = word
+def test__get_index(fixture):
+    upper_limit = 6
+    for _ in range(1_000_000):
+        assert 0 <= fixture.wp_protected._get_index(upper_limit) < upper_limit
 
-        self.wp.publish_word.connect(word_published)
-        self.wp.pick()
-        self.assertIn(self.received_word, self.words)
 
-    def test__get_word(self):
-        word = self.wp._get_word(at_index=6, from_file=self.wp._file_obj)
-        self.assertEqual("NANTUCKET", word, f"{word} != expected NANTUCKET")
+def test__get_word_from_file(fixture):
+    assert fixture.wp_protected._get_word_from_file(6, fixture.file_obj) == "NANTUCKET"
+    fixture.file_obj.seek(0)
+    assert fixture.wp_protected._get_word_from_file(1, fixture.file_obj) == "ONCE"
+    fixture.file_obj.seek(0)
+    assert fixture.wp_protected._get_word_from_file(15, fixture.file_obj) == "SUCK"
+    fixture.file_obj.seek(0)
+    assert fixture.wp_protected._get_word_from_file(10, fixture.file_obj) == "DICK"
 
-    def test__get_index(self):
-        # not sure about the validity of this test
-        # i.e., is the testing method even sound, is 1 million tests statistically enough
-        upper_limit = 6
-        for _ in range(1_000_000):
-            index = self.wp._get_index(upper_limit)
-            self.assertGreaterEqual(index, 0)
-            self.assertLess(index, upper_limit)
 
-    def test__find_word_in_file(self):
-        index = 6
-        assert self.wp._find_word_in_file(index, self.buffer) == "NANTUCKET", "Whoops"
+def test_pick(fixture, capsys):
+    fixture.wp_protected.pick()
+    captured = capsys.readouterr()
+    assert captured.out.strip() in fixture.word_list
+    assert fixture.file_obj.closed

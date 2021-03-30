@@ -17,9 +17,9 @@ class _WordPicker(QObject):
 
     def pick(self):
         while True:
-            word = self._get_word(
+            word = self._get_word_from_file(
                 at_index=self._get_index(self._word_count),
-                from_file=self._file_obj
+                file=self._file_obj
             )
             if word and not self._filters:
                 break
@@ -32,15 +32,12 @@ class _WordPicker(QObject):
         self.publish_word.emit(word.upper())
         self._file_obj.close()
 
-    def _get_word(self, *, at_index: int, from_file: IO[str]) -> str:
-        return self._find_word_in_file(at_index, from_file)
-
     @staticmethod
     def _get_index(upper_limit: int) -> int:
         return random.randrange(0, upper_limit)
 
     @staticmethod
-    def _find_word_in_file(at_index: int, file: IO[str]) -> str:
+    def _get_word_from_file(at_index: int, file: IO[str]) -> str:
         for index, word in enumerate(file):
             if at_index == index:
                 return word.strip()
@@ -68,8 +65,7 @@ class WordPicker(QObject):
         self._filters = filters
 
     def pick_a_word(self):
-        file = open(self._path, "r")
-        picker = _WordPicker(self._word_count, file, self._filters)
+        picker = _WordPicker(self._word_count, open(self._path), self._filters)
         # noinspection PyUnresolvedReferences
         picker.publish_word.connect(self._receive_word)
         word_picker = _WordPickerRunnable(picker)
