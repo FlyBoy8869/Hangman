@@ -6,7 +6,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QRunnable, QThreadPool
 from hangman.filters import FilterCollection
 
 
-class _WordPicker(QObject):
+class _WordPickerWorker(QObject):
     publish_word = pyqtSignal(str)
 
     def __init__(self, word_count, file_obj: IO[str], filters=None):
@@ -65,7 +65,9 @@ class WordPicker(QObject):
         self._filters = filters
 
     def pick_a_word(self):
-        picker = _WordPicker(self._word_count, open(self._path), self._filters)
+        """Creates and starts a thread to pick a word
+        in order to allow a spinner to be shown briefly."""
+        picker = _WordPickerWorker(self._word_count, open(self._path), self._filters)
         # noinspection PyUnresolvedReferences
         picker.publish_word.connect(self._receive_word)
         word_picker = _WordPickerRunnable(picker)
