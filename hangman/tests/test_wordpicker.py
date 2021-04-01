@@ -3,7 +3,7 @@ from io import StringIO
 # noinspection PyPackageRequirements
 import pytest
 
-from hangman.wordpicker import _WordPickerWorker
+from hangman.wordpicker import WordPicker
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def file_obj(word_list):
 @pytest.fixture
 def word_picker_worker(word_list, file_obj):
     file, length = file_obj
-    return _WordPickerWorker(length, file)
+    return WordPicker(length, file)
 
 
 def test__get_index(word_picker_worker):
@@ -43,10 +43,8 @@ def test__get_word_from_file(word_picker_worker, file_obj):
     assert word_picker_worker._get_word_from_file(10, file) == "DICK"
 
 
-def test_pick(word_picker_worker, word_list, file_obj, capsys):
+def test_pick(word_picker_worker, word_list, file_obj):
     file, _ = file_obj
-    word_picker_worker.publish_word.connect(lambda word: print(word))
-    word_picker_worker.pick()
-    captured = capsys.readouterr()
-    assert captured.out.strip() in word_list
+    word = word_picker_worker.pick_a_word()
+    assert word.strip() in word_list
     assert file.closed

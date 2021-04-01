@@ -14,6 +14,8 @@ _alphabet = frozenset("abcdefghijklmnopqrstuvwxyz")
 _image_logo_path = "resources/images/Logo_1.png"
 _spinner = "resources/images/spinners/spinner.gif"
 
+_spinner_delay: int = 700
+
 
 class MainWindow(QDialog, Ui_MainDialog):
     extra = {"classname": "MainWindow"}
@@ -69,7 +71,7 @@ class MainWindow(QDialog, Ui_MainDialog):
         self.label_available_letters.clear()
         self.label_guessed_letters.clear()
         self._show_spinner()
-        self._game.new_game()
+        QTimer.singleShot(_spinner_delay, self._game.new_game)
 
     def _game_over(self, result: GameResult) -> None:
         # QTimer is used to allow the last letter guessed to show up immediately

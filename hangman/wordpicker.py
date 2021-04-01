@@ -1,21 +1,22 @@
 import random
 from typing import IO
 
-from PyQt5.QtCore import QObject, pyqtSignal, QRunnable, QThreadPool
+from PyQt5.QtCore import QObject
 
 from hangman.filters import FilterCollection
 
 
-class _WordPickerWorker(QObject):
-    publish_word = pyqtSignal(str)
-
-    def __init__(self, word_count, file_obj: IO[str], filters=None):
+class WordPicker(QObject):
+    def __init__(self, word_count: int, file: IO[str], selection_filters: FilterCollection = None):
         super().__init__()
         self._word_count = word_count
-        self._file_obj = file_obj
+        self._file_obj = file
+        self._filters = selection_filters
+
+    def set_filters(self, filters: FilterCollection):
         self._filters = filters
 
-    def pick(self):
+    def pick_a_word(self):
         while True:
             word = self._get_word_from_file(
                 at_index=self._get_index(self._word_count),
@@ -28,9 +29,8 @@ class _WordPickerWorker(QObject):
 
             self._file_obj.seek(0)
 
-        # noinspection PyUnresolvedReferences
-        self.publish_word.emit(word.upper())
         self._file_obj.close()
+        return word.upper()
 
     @staticmethod
     def _get_index(upper_limit: int) -> int:
@@ -41,38 +41,3 @@ class _WordPickerWorker(QObject):
         for index, word in enumerate(file):
             if at_index == index:
                 return word.strip()
-
-
-class _WordPickerRunnable(QRunnable):
-    def __init__(self, picker):
-        super().__init__()
-        self._picker = picker
-
-    def run(self) -> None:
-        self._picker.pick()
-
-
-class WordPicker(QObject):
-    publish_word = pyqtSignal(str)
-
-    def __init__(self, word_count: int, path: str, selection_filters: FilterCollection = None):
-        super().__init__()
-        self._word_count = word_count
-        self._path = path
-        self._filters = selection_filters
-
-    def set_filters(self, filters: FilterCollection):
-        self._filters = filters
-
-    def pick_a_word(self):
-        """Creates and starts a thread to pick a word
-        in order to allow a spinner to be shown briefly."""
-        picker = _WordPickerWorker(self._word_count, open(self._path), self._filters)
-        # noinspection PyUnresolvedReferences
-        picker.publish_word.connect(self._receive_word)
-        word_picker = _WordPickerRunnable(picker)
-        QThreadPool.globalInstance().start(word_picker)
-
-    def _receive_word(self, word: str) -> None:
-        # noinspection PyUnresolvedReferences
-        self.publish_word.emit(word.upper())

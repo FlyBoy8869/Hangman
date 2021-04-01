@@ -1,15 +1,12 @@
 from enum import IntEnum
 from typing import Iterator
 
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
 from hangman.config import config
-from hangman.filters import LengthFilter, RangeFilter, FilterCollection
 from hangman.gameresultdialog import GameResult
 from hangman.wordpicker import WordPicker
-
-_spinner_delay: int = 700
 
 
 class GallowsImage(IntEnum):
@@ -96,15 +93,7 @@ class Game(QObject):
         self._gallows_image: GallowsImage
         self._game_over: bool = False
 
-        self._word_picker = WordPicker(config.word_count, config.word_path)
-        self._word_picker.publish_word.connect(self._received_new_word)
-
-        # if config.range:
-        #     if len(config.range) > 1:
-        #         filter_ = RangeFilter(config.range)
-        #     else:
-        #         filter_ = LengthFilter(config.range[0])
-        #     self._word_picker.set_filters(FilterCollection([filter_]))
+        self._word_picker = WordPicker(config.word_count, open(config.word_path))
 
     @property
     def mask(self) -> str:
@@ -115,7 +104,7 @@ class Game(QObject):
         return self._word_to_guess
 
     def new_game(self) -> None:
-        self._word_picker.pick_a_word()
+        self._new_game()
 
     def process_guess(self, letter) -> None:
         if self._game_over or self._tracking(letter, self._tracker):
@@ -142,9 +131,9 @@ class Game(QObject):
     def _format_guessed_letters_separated_by_spaces(self) -> str:
         return self._join(self._tracker.used, " ")
 
-    def _new_game(self, word: str) -> None:
+    def _new_game(self) -> None:
         self._tracker = LetterTracker()
-        self._word_to_guess = word
+        self._word_to_guess = self._word_picker.pick_a_word()
         self._mask = Mask(self._word_to_guess)
         self._image_from_genny = _advance_gallows_image()
         self._gallows_image = next(self._image_from_genny)
@@ -161,10 +150,6 @@ class Game(QObject):
             self._game_over = True
 
         self._emit_signal(self.changeImage, self._get_image(self._gallows_image))
-
-    def _received_new_word(self, word: str) -> None:
-        ic(word)
-        QTimer.singleShot(_spinner_delay, lambda: self._new_game(word))
 
     def _update_mask(self, letter: str) -> None:
         self._mask.update(letter)
