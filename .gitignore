@@ -1,4 +1,5 @@
-DS_STORE
+.DS_STORE
 .idea
 /venv/
 /resources/data/words/working_words.dat
+__pycache__
