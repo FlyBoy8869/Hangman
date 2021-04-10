@@ -93,7 +93,7 @@ class Game(QObject):
         self._gallows_image: GallowsImage
         self._game_over: bool = False
 
-        self._word_picker = WordPicker(config.word_count, open(config.word_path))
+        self._word_picker = WordPicker()
 
     @property
     def mask(self) -> str:
@@ -133,7 +133,8 @@ class Game(QObject):
 
     def _new_game(self) -> None:
         self._tracker = LetterTracker()
-        self._word_to_guess = self._word_picker.pick_a_word()
+        # self._word_to_guess = self._word_picker.pick_a_word(config.word_count, open(config.word_path))
+        self._word_to_guess = self._word_picker(config.word_count, open(config.word_path))
         self._mask = Mask(self._word_to_guess)
         self._image_from_genny = _advance_gallows_image()
         self._gallows_image = next(self._image_from_genny)

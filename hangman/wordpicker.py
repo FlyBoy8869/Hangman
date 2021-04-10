@@ -1,43 +1,35 @@
 import random
 from typing import IO
 
-from PyQt5.QtCore import QObject
-
 from hangman.filters import FilterCollection
 
 
-class WordPicker(QObject):
-    def __init__(self, word_count: int, file: IO[str], selection_filters: FilterCollection = None):
-        super().__init__()
-        self._word_count = word_count
-        self._file_obj = file
+class WordPicker:
+    def __init__(self, selection_filters: FilterCollection = None):
         self._filters = selection_filters
 
-    def set_filters(self, filters: FilterCollection):
-        self._filters = filters
+    def __call__(self, word_count: int, file: IO[str]) -> str:
+        while self._is_filtered_out(
+                    word := self._get_word_from_file(
+                            at_index=self._get_index(word_count),
+                            iterator=enumerate(file))):
+            file.seek(0)
 
-    def pick_a_word(self):
-        while True:
-            word = self._get_word_from_file(
-                at_index=self._get_index(self._word_count),
-                file=self._file_obj
-            )
-            if word and not self._filters:
-                break
-            if self._filters.apply(word):
-                break
+        file.close()
+        return word.strip().upper()
 
-            self._file_obj.seek(0)
-
-        self._file_obj.close()
-        return word.upper()
+    def _is_filtered_out(self, word: str) -> bool:
+        return not (not self._filters or self._filters.apply(word))
 
     @staticmethod
     def _get_index(upper_limit: int) -> int:
-        return random.randrange(0, upper_limit)
+        return random.randrange(upper_limit)
+
+    # def _get_word_from_file(self, *, at_index: int, iterator) -> str:
+    #     return next(self._unwind_iterator_to(index=at_index, iterator=iterator))[1]
 
     @staticmethod
-    def _get_word_from_file(at_index: int, file: IO[str]) -> str:
-        for index, word in enumerate(file):
-            if at_index == index:
-                return word.strip()
+    def _get_word_from_file(*, at_index: int, iterator):
+        for _ in range(at_index):
+            next(iterator)
+        return next(iterator)[1]
