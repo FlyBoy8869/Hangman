@@ -25,9 +25,6 @@ class WordPicker:
     def _get_index(upper_limit: int) -> int:
         return random.randrange(upper_limit)
 
-    # def _get_word_from_file(self, *, at_index: int, iterator) -> str:
-    #     return next(self._unwind_iterator_to(index=at_index, iterator=iterator))[1]
-
     @staticmethod
     def _get_word_from_file(*, at_index: int, iterator):
         for _ in range(at_index):
