@@ -34,13 +34,13 @@ def test__get_index(word_picker_worker):
 
 def test__get_word_from_file(word_picker_worker, file_obj):
     file, _ = file_obj
-    assert word_picker_worker._get_word_from_file(6, file) == "NANTUCKET"
+    assert word_picker_worker._get_word_from_file_at_index(file=, index=) == "NANTUCKET"
     file.seek(0)
-    assert word_picker_worker._get_word_from_file(1, file) == "ONCE"
+    assert word_picker_worker._get_word_from_file_at_index(file=, index=) == "ONCE"
     file.seek(0)
-    assert word_picker_worker._get_word_from_file(15, file) == "SUCK"
+    assert word_picker_worker._get_word_from_file_at_index(file=, index=) == "SUCK"
     file.seek(0)
-    assert word_picker_worker._get_word_from_file(10, file) == "DICK"
+    assert word_picker_worker._get_word_from_file_at_index(file=, index=) == "DICK"
 
 
 def test_pick(word_picker_worker, word_list, file_obj):

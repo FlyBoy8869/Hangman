@@ -1,32 +1,32 @@
 import random
 from typing import IO
 
+import attr
+
 from hangman.filters import FilterCollection
 
 
+@attr.s(auto_attribs=True)
 class WordPicker:
-    def __init__(self, selection_filters: FilterCollection = None):
-        self._filters = selection_filters
+    _selection_filters: FilterCollection = None
 
     def __call__(self, word_count: int, file: IO[str]) -> str:
-        while self._is_filtered_out(
-                    word := self._get_word_from_file(
-                            at_index=self._get_index(word_count),
-                            iterator=enumerate(file))):
-            file.seek(0)
+        while True:
+            word = self._get_word_from_file_at_index(
+                file=file,
+                index=random.randrange(word_count)
+            )
+            if self._word_passes_filters(word):
+                file.close()
+                return word.upper()
 
-        file.close()
-        return word.strip().upper()
+            file.seek(0)  # word rejected, rewind and try again
 
-    def _is_filtered_out(self, word: str) -> bool:
-        return not (not self._filters or self._filters.apply(word))
-
-    @staticmethod
-    def _get_index(upper_limit: int) -> int:
-        return random.randrange(upper_limit)
+    def _word_passes_filters(self, word: str) -> bool:
+        return not self._selection_filters or self._selection_filters.apply(word)
 
     @staticmethod
-    def _get_word_from_file(*, at_index: int, iterator):
-        for _ in range(at_index):
-            next(iterator)
-        return next(iterator)[1]
+    def _get_word_from_file_at_index(*, file: IO[str], index: int) -> str:
+        for _ in range(index):
+            file.readline()
+        return file.readline().strip()
