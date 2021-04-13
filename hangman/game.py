@@ -19,7 +19,7 @@ class GallowsImage(IntEnum):
     LEFT_LEG = 6
 
 
-def _advance_gallows_image() -> Iterator[GallowsImage]:
+def _gallows_image_provider() -> Iterator[GallowsImage]:
     yield from GallowsImage
 
 
@@ -57,11 +57,14 @@ class LetterTracker:
     def has_been_used(self, letter: str) -> bool:
         return letter in self.used
 
+    def reset(self):
+        self._used_letters = ()
+
 
 class Mask:
-    def __init__(self, word: str):
+    def __init__(self, word: str, place_holder: str = "_"):
         self._word = word
-        self._mask = ["-"] * len(word)
+        self._mask = [place_holder] * len(word)
 
     @property
     def mask(self):
@@ -82,14 +85,15 @@ class Game(QObject):
 
     # **********  PUBLIC INTERFACE  ************************************************************************
 
-    def __init__(self):
+    def __init__(self, word_picker: WordPicker, tracker: LetterTracker):
         super().__init__()
 
-        self._tracker = LetterTracker()
+        self._word_picker = word_picker
+        self._tracker: LetterTracker = tracker
 
-        self._word_to_guess: str
+        self._word_to_guess: str = "NO GAME IN PROGRESS"
         self._mask: Mask
-        self._image_from_genny: Iterator[GallowsImage]
+        self._image_pool: Iterator[GallowsImage]
         self._gallows_image: GallowsImage
         self._game_over: bool = False
 
@@ -130,19 +134,21 @@ class Game(QObject):
         return self._join(self._tracker.used, " ")
 
     def _new_game(self) -> None:
-        self._tracker = LetterTracker()
-        self._word_to_guess = WordPicker()(config.word_count, open(config.word_path))
+        self._word_to_guess = self._word_picker.pick()
         self._mask = Mask(self._word_to_guess)
-        self._image_from_genny = _advance_gallows_image()
-        self._gallows_image = next(self._image_from_genny)
+        self._tracker.reset()
+
+        self._image_pool = _gallows_image_provider()
+        self._gallows_image = next(self._image_pool)
+
         self._game_over = False
 
         self._emit_signal(self.availableLetters, self._format_available_letters_separated_by_spaces())
         self._emit_signal(self.maskChanged, self.mask)
-        self._emit_signal(self.changeImage, self._get_image(GallowsImage.THE_DREADED_GALLOWS))
+        self._emit_signal(self.changeImage, self._get_image(self._gallows_image))
 
     def _process_wrong_guess(self) -> None:
-        self._gallows_image = next(self._image_from_genny)
+        self._gallows_image = next(self._image_pool)
         if self._is_game_lost(self._gallows_image, GallowsImage.LEFT_LEG):
             self._emit_signal(self.gameOver, GameResult.LOST)
             self._game_over = True

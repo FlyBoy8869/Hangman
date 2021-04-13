@@ -6,8 +6,9 @@ from PyQt5.QtWidgets import QDialog
 from . import helpers
 from .config import config
 from .designerforms import Ui_MainDialog
-from .game import Game
+from .game import Game, LetterTracker
 from .gameresultdialog import GameResult, GameResultDialogWrapper
+from .wordpicker import WordPicker
 
 _alphabet = frozenset("abcdefghijklmnopqrstuvwxyz")
 
@@ -31,7 +32,10 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._ctrl_n = helpers.CtrlKeySequence(Qt.Key_N)
         self._ctrl_r = helpers.CtrlKeySequence(Qt.Key_R)
 
-        self._game = Game()
+        self._file_obj = open(config.word_path)
+        word_picker = WordPicker(self._file_obj, config.word_count)
+
+        self._game = Game(word_picker, LetterTracker())
         self._game.availableLetters.connect(self.label_available_letters.setText)
         self._game.guessedLetters.connect(self.label_guessed_letters.setText)
         self._game.changeImage.connect(self.label_status.setPixmap)
@@ -48,6 +52,7 @@ class MainWindow(QDialog, Ui_MainDialog):
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if config.noconfirmexit or helpers.pop_exit_dialog(self):
+            self._file_obj.close()
             event.accept()
         else:
             event.ignore()

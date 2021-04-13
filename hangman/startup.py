@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Iterator
 
 from hangman import config
 from hangman.patchexceptionhook import patch_exception_hook
@@ -11,7 +12,7 @@ _all_words = "resources/data/words/words.dat"
 _all_words_length = 370103
 
 
-def _make_file_genny(path):
+def _make_file_genny(path) -> Iterator[str]:
     with open(path, "r") as infile:
         yield from infile
 
@@ -29,7 +30,7 @@ def _combine_files(paths: list[Path, ...]) -> int:
                 total_length += 1
                 outfile.write(word)
 
-    print(f"{total_length=}")
+    ic(total_length)
     return total_length
 
 
