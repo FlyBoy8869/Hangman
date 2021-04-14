@@ -10,15 +10,15 @@ from hangman.filters import FilterCollection
 class WordPicker:
     _file: IO[str]
     _file_length: int
-    _filters: FilterCollection = None
+    _filters: FilterCollection
 
     def pick(self) -> str:
-        while True:
-            if self._word_passes_filters(word := self._get_word_from_file()):
-                return word.strip().upper()
+        while self._word_filtered_out(word := self._get_word_from_file()):
+            continue
+        return word.strip().upper()
 
-    def _word_passes_filters(self, word: str) -> bool:
-        return not self._filters or self._filters.apply(word)
+    def _word_filtered_out(self, word: str) -> bool:
+        return not self._filters.apply(word)
 
     def _get_word_from_file(self):
         self._file.seek(0)

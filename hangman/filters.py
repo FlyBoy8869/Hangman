@@ -8,6 +8,11 @@ class Filter:
         pass
 
 
+class DummyFilter(Filter):
+    def filter(self, word: str):
+        return True
+
+
 class NoApostropheFilter(Filter):
     def filter(self, word: str):
         """Return True if there are no apostrophes in word."""
@@ -61,3 +66,6 @@ class FilterCollection:
 
     def _apply_filters_to(self, word: str):
         return [_filter.filter(word) for _filter in self._filters]
+
+
+dummy_filter_collection = FilterCollection([DummyFilter()])

@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QDialog
 from . import helpers
 from .config import config
 from .designerforms import Ui_MainDialog
+from .filters import dummy_filter_collection
 from .game import Game, LetterTracker
 from .gameresultdialog import GameResult, GameResultDialogWrapper
 from .wordpicker import WordPicker
@@ -33,7 +34,7 @@ class MainWindow(QDialog, Ui_MainDialog):
         self._ctrl_r = helpers.CtrlKeySequence(Qt.Key_R)
 
         self._file_obj = open(config.word_path)
-        word_picker = WordPicker(self._file_obj, config.word_count)
+        word_picker = WordPicker(self._file_obj, config.word_count, dummy_filter_collection)
 
         self._game = Game(word_picker, LetterTracker())
         self._game.availableLetters.connect(self.label_available_letters.setText)
