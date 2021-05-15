@@ -1,15 +1,19 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QKeyEvent
+from PyQt6.QtWidgets import QMessageBox, QApplication
 
 
 def pop_exit_dialog(parent) -> bool:
-    if QMessageBox.question(
-        parent, "Exiting...", "Are you sure?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-    ) == QMessageBox.Yes:
-        return True
-
-    return False
+    return (
+        QMessageBox.question(
+            parent,
+            "Exiting...",
+            "Are you sure?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        == QMessageBox.StandardButton.Yes
+    )
 
 
 class Key:
@@ -27,7 +31,8 @@ class Key:
 
 
 class KeySequence:
-    modifier: Qt.KeyboardModifiers = None
+    # modifier: Qt.KeyboardModifiers = None
+    modifier: Qt.KeyboardModifier
 
     def __init__(self, key: Key):
         self._key = key
@@ -38,4 +43,4 @@ class KeySequence:
 
 
 class CtrlKeySequence(KeySequence):
-    modifier = Qt.ControlModifier
+    modifier = Qt.KeyboardModifier.ControlModifier

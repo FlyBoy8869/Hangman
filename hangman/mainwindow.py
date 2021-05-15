@@ -1,7 +1,7 @@
-from PyQt5 import QtGui
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QMovie, QPixmap
-from PyQt5.QtWidgets import QDialog
+from PyQt6 import QtGui
+from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QMovie, QPixmap
+from PyQt6.QtWidgets import QDialog
 
 from . import helpers
 from .config import config
@@ -29,9 +29,9 @@ class MainWindow(QDialog, Ui_MainDialog):
         self.resize(*self.window_size)
         self.setupUi(self)
 
-        self._ctrl_f = helpers.CtrlKeySequence(Qt.Key_F)
-        self._ctrl_n = helpers.CtrlKeySequence(Qt.Key_N)
-        self._ctrl_r = helpers.CtrlKeySequence(Qt.Key_R)
+        self._ctrl_f = helpers.CtrlKeySequence(Qt.Key.Key_F)
+        self._ctrl_n = helpers.CtrlKeySequence(Qt.Key.Key_N)
+        self._ctrl_r = helpers.CtrlKeySequence(Qt.Key.Key_R)
 
         self._file_obj = open(config.word_path)
         word_picker = WordPicker(self._file_obj, config.word_count, dummy_filter_collection)

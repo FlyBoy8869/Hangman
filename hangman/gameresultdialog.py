@@ -1,9 +1,9 @@
 from enum import Enum
 
-from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QPalette, QPixmap
-from PyQt5.QtWidgets import QDialog
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QPalette, QPixmap
+from PyQt6.QtWidgets import QDialog
 
 from .designerforms import Ui_ResultDialog
 
@@ -17,7 +17,7 @@ class GameResultDialog(QDialog, Ui_ResultDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setupUi(self)
-        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         self.accept()
@@ -43,7 +43,8 @@ _pink_shade = (215, 26, 90, 255)
 
 _dialog_window_color = {
     GameResult.WON: QColor(*_orange_shade),
-    GameResult.LOST: Qt.red
+    # GameResult.LOST: Qt.red
+    GameResult.LOST: Qt.GlobalColor.red
 }
 
 
@@ -60,7 +61,7 @@ class GameResultDialogWrapper:
     def _create_palette_from(result: GameResult) -> QPalette:
         palette = QPalette()
         color = _dialog_window_color[result]
-        palette.setBrush(QPalette.Window, color)
+        palette.setBrush(QPalette.ColorRole.Window, color)
         return palette
 
     @staticmethod

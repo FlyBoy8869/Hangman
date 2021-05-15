@@ -1,8 +1,8 @@
 import io
 import sys
 
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMessageBox
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import QMessageBox
 
 _original_hook = sys.excepthook
 _original_stderr = sys.stderr
@@ -22,7 +22,7 @@ def excepthook(exc_type, exc_value, traceback_obj):
 
     # make traceback visible in GUI
     font = QFont("non-existent")
-    font.setStyleHint(QFont.TypeWriter)
+    font.setStyleHint(QFont.StyleHint.TypeWriter)
     error_box = QMessageBox()
     error_box.setFont(font)
     error_box.setIcon(QMessageBox.Critical)

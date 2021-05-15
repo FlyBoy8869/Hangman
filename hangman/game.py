@@ -1,8 +1,8 @@
 from enum import IntEnum
 from typing import Iterator
 
-from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtGui import QPixmap
+from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtGui import QPixmap
 
 from hangman.config import config
 from hangman.gameresultdialog import GameResult
